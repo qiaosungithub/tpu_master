@@ -1,132 +1,306 @@
-2025-12-15 18:38:07,660 [INFO] === 开始全量 TPU 合规性审计 ===
-2025-12-15 18:38:09,791 [INFO] 在 us-central1-a 发现 6 个活跃 TPU (跳过 0 个异常状态)
-2025-12-15 18:38:11,922 [INFO] 在 us-central1-b 发现 9 个活跃 TPU (跳过 0 个异常状态)
-2025-12-15 18:38:14,029 [INFO] ignore us-central2-b/kmh-tpuvm-v4-8-4 (测试忽略名单)
-2025-12-15 18:38:14,029 [INFO] 在 us-central2-b 发现 16 个活跃 TPU (跳过 2 个异常状态)
-2025-12-15 18:38:18,207 [INFO] 在 us-east5-a 发现 2 个活跃 TPU (跳过 0 个异常状态)
-2025-12-15 18:38:20,270 [INFO] 在 us-east5-b 发现 3 个活跃 TPU (跳过 0 个异常状态)
-2025-12-15 18:38:23,103 [INFO] 在 europe-west4-a 发现 4 个活跃 TPU (跳过 0 个异常状态)
-2025-12-15 18:38:25,451 [INFO] 在 asia-northeast1-b 发现 11 个活跃 TPU (跳过 1 个异常状态)
-2025-12-15 18:38:29,833 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-9efa83] is idle.
-2025-12-15 18:38:30,252 [INFO] TPU [kmh-tpuvm-v5p-128-spot-gzy-2] is idle.
-2025-12-15 18:38:30,637 [INFO] TPU [kmh-tpuvm-v4-8-1] is idle.
-2025-12-15 18:38:30,638 [INFO] TPU [kmh-tpuvm-v5p-128-1] is idle.
-2025-12-15 18:38:31,525 [INFO] TPU [kmh-tpuvm-v6e-64-spot-103] found 16 workers, user: {'sqa'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'bucket-us-central1@he-vision-group.iam.gserviceaccount.com'}
-2025-12-15 18:38:31,525 [ERROR] TPU [kmh-tpuvm-v6e-64-spot-103] 🚨 违规！用户: {'sqa'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-central1@he-vision-group.iam.gserviceaccount.com
-2025-12-15 18:38:31,525 [WARNING] 🚫 [DRY RUN] 发现违规，拟删除 TPU: kmh-tpuvm-v6e-64-spot-103
-2025-12-15 18:38:31,791 [INFO] TPU [kmh-tpuvm-v6e-64-spot-109] found 16 workers, user: {'sqa'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
-2025-12-15 18:38:31,791 [ERROR] TPU [kmh-tpuvm-v6e-64-spot-109] 🚨 违规！用户: {'sqa'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-central1@he-vision-group.iam.gserviceaccount.com
-2025-12-15 18:38:31,791 [WARNING] 🚫 [DRY RUN] 发现违规，拟删除 TPU: kmh-tpuvm-v6e-64-spot-109
-2025-12-15 18:38:31,979 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-dc7c7d] found 8 workers, user: {'eva'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
-2025-12-15 18:38:31,979 [ERROR] TPU [kmh-tpuvm-v6e-32-kangyang-dc7c7d] 🚨 违规！用户: {'eva'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-central1@he-vision-group.iam.gserviceaccount.com
-2025-12-15 18:38:31,982 [INFO] [032m宽限 zhh 的 TPU: kmh-tpuvm-v6e-32-kangyang-dc7c7d[0m
-2025-12-15 18:38:32,948 [INFO] TPU [kmh-tpuvm-v5p-64-1] found 8 workers, user: {'sqa'}, environ SA: {'bucket-us-central1@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'bucket-us-central1@he-vision-group.iam.gserviceaccount.com'}
-2025-12-15 18:38:32,948 [INFO] TPU [kmh-tpuvm-v5p-64-1] ✅ 合规：运行中，所有 Service Account 正确
-2025-12-15 18:38:34,452 [INFO] TPU [kmh-tpuvm-v6e-64-spot-107] is idle.
-2025-12-15 18:38:34,566 [INFO] TPU [kmh-tpuvm-v5p-32-nopreeeee-1] is idle.
-2025-12-15 18:38:35,876 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-2d1eb9] is idle.
-2025-12-15 18:38:35,884 [INFO] TPU [kmh-tpuvm-v4-8-3] is idle.
-2025-12-15 18:38:35,926 [INFO] TPU [kmh-tpuvm-v6e-128-spot-gzy-11] found 32 workers, user: {'zgeng2'}, environ SA: set(), gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
-2025-12-15 18:38:35,927 [ERROR] TPU [kmh-tpuvm-v6e-128-spot-gzy-11] 🚨 违规！用户: {'zgeng2'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-central1@he-vision-group.iam.gserviceaccount.com
-2025-12-15 18:38:35,929 [WARNING] 🚫 [DRY RUN] 发现违规，拟删除 TPU: kmh-tpuvm-v6e-128-spot-gzy-11
-2025-12-15 18:38:35,936 [INFO] TPU [kmh-tpuvm-v6e-64-spot-108] is idle.
-2025-12-15 18:38:36,898 [INFO] TPU [kmh-tpuvm-v4-32-spot-yiyang20] is idle.
-2025-12-15 18:38:36,942 [INFO] TPU [kmh-tpuvm-v5p-128-spot-gzy-1] found 16 workers, user: {'zgeng2'}, environ SA: set(), gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
-2025-12-15 18:38:36,942 [ERROR] TPU [kmh-tpuvm-v5p-128-spot-gzy-1] 🚨 违规！用户: {'zgeng2'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-central1@he-vision-group.iam.gserviceaccount.com
-2025-12-15 18:38:36,945 [WARNING] 🚫 [DRY RUN] 发现违规，拟删除 TPU: kmh-tpuvm-v5p-128-spot-gzy-1
-2025-12-15 18:38:39,065 [INFO] TPU [kmh-tpuvm-v4-32-spot-zander-1] is idle.
-2025-12-15 18:38:39,200 [INFO] TPU [kmh-tpuvm-v5p-64-nopre-2] found 8 workers, user: {'sqa'}, environ SA: {'bucket-us-central1@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'bucket-us-central1@he-vision-group.iam.gserviceaccount.com'}
-2025-12-15 18:38:39,200 [INFO] TPU [kmh-tpuvm-v5p-64-nopre-2] ✅ 合规：运行中，所有 Service Account 正确
-2025-12-15 18:38:39,265 [INFO] TPU [kmh-tpuvm-v4-8-2] is idle.
-2025-12-15 18:38:40,920 [INFO] TPU [kmh-tpuvm-v4-64-kangyang-66e1c1] is idle.
-2025-12-15 18:38:40,959 [INFO] TPU [kmh-tpuvm-v4-64-spot-t1] is idle.
-2025-12-15 18:38:40,983 [INFO] TPU [kmh-tpuvm-v6e-128-spot-gzy-12] is idle.
-2025-12-15 18:38:41,159 [INFO] TPU [kmh-tpuvm-v4-64-spot-yiyang] is idle.
-2025-12-15 18:38:42,144 [INFO] TPU [kmh-tpuvm-v5p-256-spot-gzy-2] is idle.
-2025-12-15 18:38:42,158 [INFO] TPU [kmh-tpuvm-v4-64-spot-di1] is idle.
-2025-12-15 18:38:44,233 [INFO] TPU [kmh-tpuvm-v4-8-8] is idle.
-2025-12-15 18:38:44,748 [INFO] TPU [kmh-tpuvm-v4-64-spot-yiyang2] is idle.
-2025-12-15 18:38:45,566 [INFO] TPU [kmh-tpuvm-v4-64-spot-t3] is idle.
-2025-12-15 18:38:45,702 [INFO] TPU [kmh-tpuvm-v6e-64-spot-52] found 16 workers, user: {'sqa'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
-2025-12-15 18:38:45,702 [ERROR] TPU [kmh-tpuvm-v6e-64-spot-52] 🚨 违规！用户: {'sqa'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-east5@he-vision-group.iam.gserviceaccount.com
-2025-12-15 18:38:45,705 [WARNING] 🚫 [DRY RUN] 发现违规，拟删除 TPU: kmh-tpuvm-v6e-64-spot-52
-2025-12-15 18:38:45,788 [INFO] TPU [kmh-tpuvm-v4-64-kangyang-c2463b] is idle.
-2025-12-15 18:38:46,863 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-daf137] is idle.
-2025-12-15 18:38:47,403 [INFO] TPU [kmh-tpuvm-v5p-256-spot-gzy-1] is idle.
-2025-12-15 18:38:47,549 [INFO] TPU [kmh-tpuvm-v3-8-10] is idle.
-2025-12-15 18:38:48,830 [INFO] TPU [kmh-tpuvm-v4-64-kangyang-00863b] found 8 workers, user: {'eva'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'373438850578-compute@developer.gserviceaccount.com'}
-2025-12-15 18:38:48,830 [ERROR] TPU [kmh-tpuvm-v4-64-kangyang-00863b] 🚨 违规！用户: {'eva'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-central2@he-vision-group.iam.gserviceaccount.com
-2025-12-15 18:38:48,831 [INFO] [032m宽限 zhh 的 TPU: kmh-tpuvm-v4-64-kangyang-00863b[0m
-2025-12-15 18:38:50,643 [INFO] TPU [kmh-tpuvm-v6e-64-spot-51] is idle.
-2025-12-15 18:38:51,336 [INFO] TPU [kmh-tpuvm-v3-8-3] is idle.
-2025-12-15 18:38:52,621 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-4d2acb] is idle.
-2025-12-15 18:38:53,686 [INFO] TPU [kmh-tpuvm-v6e-32-spot-206] is idle.
-2025-12-15 18:38:54,654 [INFO] TPU [kmh-tpuvm-v3-8-2] is idle.
-2025-12-15 18:38:55,238 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-a7b650] is idle.
-2025-12-15 18:38:55,979 [INFO] TPU [kmh-tpuvm-v6e-32-spot-203] found 8 workers, user: {'sqa'}, environ SA: {'bucket-asia@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'bucket-asia@he-vision-group.iam.gserviceaccount.com'}
-2025-12-15 18:38:55,979 [INFO] TPU [kmh-tpuvm-v6e-32-spot-203] ✅ 合规：运行中，所有 Service Account 正确
-2025-12-15 18:38:56,431 [INFO] TPU [kmh-tpuvm-v6e-64-spot-kristine2] is idle.
-2025-12-15 18:38:57,133 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-2da2c4] found 8 workers, user: {'eva'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
-2025-12-15 18:38:57,133 [ERROR] TPU [kmh-tpuvm-v6e-32-kangyang-2da2c4] 🚨 违规！用户: {'eva'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-asia@he-vision-group.iam.gserviceaccount.com
-2025-12-15 18:38:57,133 [INFO] [032m宽限 zhh 的 TPU: kmh-tpuvm-v6e-32-kangyang-2da2c4[0m
-2025-12-15 18:38:58,552 [INFO] TPU [kmh-tpuvm-v3-8-1] is idle.
-2025-12-15 18:39:00,430 [INFO] TPU [kmh-tpuvm-v6e-32-spot-202] is idle.
-2025-12-15 18:39:01,401 [INFO] TPU [kmh-tpuvm-v6e-32-spot-205] is idle.
-2025-12-15 18:39:03,232 [INFO] TPU [kmh-tpuvm-v6e-32-spot-201] is idle.
-2025-12-15 18:39:04,318 [INFO] TPU [kmh-tpuvm-v6e-32-gaoxing] is idle.
-2025-12-15 18:39:05,523 [INFO] TPU [kmh-tpuvm-v6e-64-spot-kristine1] found 16 workers, user: {'kristinelu'}, environ SA: set(), gcloud SA: {'bucket-asia@he-vision-group.iam.gserviceaccount.com'}
-2025-12-15 18:39:05,523 [INFO] TPU [kmh-tpuvm-v6e-64-spot-kristine1] ✅ 合规：运行中，所有 Service Account 正确
-2025-12-15 18:39:05,538 [WARNING] [032m[Warning] [kmh-tpuvm-v4-8-7] SSH 连接超时![0m
-2025-12-15 18:39:10,355 [INFO] TPU [kmh-tpuvm-v4-8-6] is idle.
-2025-12-15 18:39:10,362 [INFO] TPU [kmh-tpuvm-v5p-64-1] 合规：运行中，且 Service Account 正确
-2025-12-15 18:39:10,362 [INFO] TPU [kmh-tpuvm-v5p-64-nopre-2] 合规：运行中，且 Service Account 正确
-2025-12-15 18:39:10,364 [INFO] TPU [kmh-tpuvm-v5p-128-1] is idle.
-2025-12-15 18:39:10,366 [INFO] TPU [kmh-tpuvm-v5p-128-spot-gzy-1] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
-2025-12-15 18:39:10,368 [INFO] TPU [kmh-tpuvm-v5p-128-spot-gzy-2] is idle.
-2025-12-15 18:39:10,370 [INFO] TPU [kmh-tpuvm-v5p-32-nopreeeee-1] is idle.
-2025-12-15 18:39:10,372 [INFO] TPU [kmh-tpuvm-v6e-128-spot-gzy-11] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
-2025-12-15 18:39:10,374 [INFO] TPU [kmh-tpuvm-v6e-128-spot-gzy-12] is idle.
-2025-12-15 18:39:10,375 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-9efa83] is idle.
-2025-12-15 18:39:10,377 [INFO] TPU [kmh-tpuvm-v6e-64-spot-107] is idle.
-2025-12-15 18:39:10,379 [INFO] TPU [kmh-tpuvm-v6e-64-spot-103] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
-2025-12-15 18:39:10,380 [INFO] TPU [kmh-tpuvm-v6e-64-spot-108] is idle.
-2025-12-15 18:39:10,382 [INFO] TPU [kmh-tpuvm-v6e-64-spot-109] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
-2025-12-15 18:39:10,384 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-2d1eb9] is idle.
-2025-12-15 18:39:10,385 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-dc7c7d] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
-2025-12-15 18:39:10,387 [INFO] TPU [kmh-tpuvm-v4-32-spot-yiyang20] is idle.
-2025-12-15 18:39:10,389 [INFO] [kmh-tpuvm-v4-8-7] 错误：SSH 连接超时
-2025-12-15 18:39:10,390 [INFO] TPU [kmh-tpuvm-v4-8-6] is idle.
-2025-12-15 18:39:10,392 [INFO] TPU [kmh-tpuvm-v4-8-1] is idle.
-2025-12-15 18:39:10,393 [INFO] TPU [kmh-tpuvm-v4-8-3] is idle.
-2025-12-15 18:39:10,394 [INFO] TPU [kmh-tpuvm-v4-8-2] is idle.
-2025-12-15 18:39:10,396 [INFO] TPU [kmh-tpuvm-v4-8-8] is idle.
-2025-12-15 18:39:10,398 [INFO] TPU [kmh-tpuvm-v4-32-spot-zander-1] is idle.
-2025-12-15 18:39:10,400 [INFO] TPU [kmh-tpuvm-v4-64-spot-yiyang2] is idle.
-2025-12-15 18:39:10,402 [INFO] TPU [kmh-tpuvm-v4-64-spot-yiyang] is idle.
-2025-12-15 18:39:10,404 [INFO] TPU [kmh-tpuvm-v4-64-kangyang-c2463b] is idle.
-2025-12-15 18:39:10,406 [INFO] TPU [kmh-tpuvm-v4-64-kangyang-66e1c1] is idle.
-2025-12-15 18:39:10,408 [INFO] TPU [kmh-tpuvm-v4-64-spot-t3] is idle.
-2025-12-15 18:39:10,410 [INFO] TPU [kmh-tpuvm-v4-64-spot-t1] is idle.
-2025-12-15 18:39:10,412 [INFO] TPU [kmh-tpuvm-v4-64-kangyang-00863b] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
-2025-12-15 18:39:10,412 [INFO] TPU [kmh-tpuvm-v4-64-spot-di1] is idle.
-2025-12-15 18:39:10,413 [INFO] TPU [kmh-tpuvm-v5p-256-spot-gzy-1] is idle.
-2025-12-15 18:39:10,415 [INFO] TPU [kmh-tpuvm-v5p-256-spot-gzy-2] is idle.
-2025-12-15 18:39:10,417 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-daf137] is idle.
-2025-12-15 18:39:10,417 [INFO] TPU [kmh-tpuvm-v6e-64-spot-52] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
-2025-12-15 18:39:10,419 [INFO] TPU [kmh-tpuvm-v6e-64-spot-51] is idle.
-2025-12-15 18:39:10,420 [INFO] TPU [kmh-tpuvm-v3-8-10] is idle.
-2025-12-15 18:39:10,422 [INFO] TPU [kmh-tpuvm-v3-8-2] is idle.
-2025-12-15 18:39:10,423 [INFO] TPU [kmh-tpuvm-v3-8-3] is idle.
-2025-12-15 18:39:10,425 [INFO] TPU [kmh-tpuvm-v3-8-1] is idle.
-2025-12-15 18:39:10,426 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-4d2acb] is idle.
-2025-12-15 18:39:10,428 [INFO] TPU [kmh-tpuvm-v6e-32-spot-202] is idle.
-2025-12-15 18:39:10,430 [INFO] TPU [kmh-tpuvm-v6e-32-spot-203] 合规：运行中，且 Service Account 正确
-2025-12-15 18:39:10,431 [INFO] TPU [kmh-tpuvm-v6e-32-spot-201] is idle.
-2025-12-15 18:39:10,433 [INFO] TPU [kmh-tpuvm-v6e-32-spot-206] is idle.
-2025-12-15 18:39:10,435 [INFO] TPU [kmh-tpuvm-v6e-32-spot-205] is idle.
-2025-12-15 18:39:10,436 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-2da2c4] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
-2025-12-15 18:39:10,438 [INFO] TPU [kmh-tpuvm-v6e-32-gaoxing] is idle.
-2025-12-15 18:39:10,440 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-a7b650] is idle.
-2025-12-15 18:39:10,442 [INFO] TPU [kmh-tpuvm-v6e-64-spot-kristine1] 合规：运行中，且 Service Account 正确
-2025-12-15 18:39:10,443 [INFO] TPU [kmh-tpuvm-v6e-64-spot-kristine2] is idle.
-2025-12-15 18:39:10,445 [INFO] 审计完成，耗时 62.79 秒。等待 237.21 秒进行下一轮...
+2025-12-15 21:12:38,690 [INFO] === 开始全量 TPU 合规性审计 ===
+2025-12-15 21:12:40,757 [INFO] 在 us-central1-a 发现 4 个活跃 TPU (跳过 0 个异常状态)
+2025-12-15 21:12:42,840 [INFO] 在 us-central1-b 发现 8 个活跃 TPU (跳过 1 个异常状态)
+2025-12-15 21:12:44,912 [INFO] ignore us-central2-b/kmh-tpuvm-v4-8-4 (测试忽略名单)
+2025-12-15 21:12:44,913 [INFO] 在 us-central2-b 发现 16 个活跃 TPU (跳过 2 个异常状态)
+2025-12-15 21:12:49,251 [INFO] 在 us-east5-a 发现 4 个活跃 TPU (跳过 1 个异常状态)
+2025-12-15 21:12:51,388 [INFO] 在 us-east5-b 发现 3 个活跃 TPU (跳过 0 个异常状态)
+2025-12-15 21:12:54,072 [INFO] 在 europe-west4-a 发现 4 个活跃 TPU (跳过 0 个异常状态)
+2025-12-15 21:12:56,991 [INFO] 在 asia-northeast1-b 发现 11 个活跃 TPU (跳过 1 个异常状态)
+2025-12-15 21:13:01,623 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-9efa83] is idle.
+2025-12-15 21:13:01,968 [INFO] TPU [kmh-tpuvm-v5p-128-1] is idle.
+2025-12-15 21:13:02,005 [INFO] TPU [kmh-tpuvm-v4-8-1] is idle.
+2025-12-15 21:13:02,006 [INFO] TPU [kmh-tpuvm-v4-32-spot-zander-1] is idle.
+2025-12-15 21:13:02,012 [INFO] TPU [kmh-tpuvm-v4-8-2] is idle.
+2025-12-15 21:13:02,142 [INFO] TPU [kmh-tpuvm-v4-32-spot-yiyang20] is idle.
+2025-12-15 21:13:03,319 [INFO] TPU [kmh-tpuvm-v6e-64-spot-109] found 16 workers, user: {'sqa'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:13:03,319 [ERROR] TPU [kmh-tpuvm-v6e-64-spot-109] 🚨 违规！用户: {'sqa'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-central1@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:13:03,322 [INFO] TPU [kmh-tpuvm-v6e-64-spot-103] found 16 workers, user: {'sqa'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'bucket-us-central1@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:13:03,331 [INFO] [032m宽限 xibo 的 TPU: kmh-tpuvm-v6e-64-spot-109[0m
+2025-12-15 21:13:03,331 [ERROR] TPU [kmh-tpuvm-v6e-64-spot-103] 🚨 违规！用户: {'sqa'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-central1@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:13:03,333 [INFO] [032m宽限 xibo 的 TPU: kmh-tpuvm-v6e-64-spot-103[0m
+2025-12-15 21:13:03,515 [INFO] TPU [kmh-tpuvm-v6e-128-spot-gzy-11] found 32 workers, user: {'zgeng2'}, environ SA: set(), gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:13:03,515 [ERROR] TPU [kmh-tpuvm-v6e-128-spot-gzy-11] 🚨 违规！用户: {'zgeng2'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-central1@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:13:03,521 [INFO] [032m宽限 zhengyang 的 TPU: kmh-tpuvm-v6e-128-spot-gzy-11[0m
+2025-12-15 21:13:04,746 [INFO] TPU [kmh-tpuvm-v5p-64-1] found 8 workers, user: {'sqa'}, environ SA: {'bucket-us-central1@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'bucket-us-central1@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:13:04,746 [INFO] TPU [kmh-tpuvm-v5p-64-1] ✅ 合规：运行中，所有 Service Account 正确
+2025-12-15 21:13:05,838 [INFO] TPU [kmh-tpuvm-v4-8-8] is idle.
+2025-12-15 21:13:06,159 [INFO] TPU [kmh-tpuvm-v6e-64-spot-107] is idle.
+2025-12-15 21:13:06,347 [INFO] TPU [kmh-tpuvm-v5p-32-nopreeeee-1] is idle.
+2025-12-15 21:13:06,601 [INFO] TPU [kmh-tpuvm-v4-64-spot-yiyang2] is idle.
+2025-12-15 21:13:06,834 [INFO] TPU [kmh-tpuvm-v4-8-6] is idle.
+2025-12-15 21:13:07,144 [INFO] TPU [kmh-tpuvm-v4-8-3] is idle.
+2025-12-15 21:13:08,365 [INFO] TPU [kmh-tpuvm-v6e-128-spot-gzy-12] is idle.
+2025-12-15 21:13:09,635 [INFO] TPU [kmh-tpuvm-v6e-64-spot-108] found 16 workers, user: {'sqa'}, environ SA: {'bucket-us-central1@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:13:09,636 [ERROR] TPU [kmh-tpuvm-v6e-64-spot-108] 🚨 违规！用户: {'sqa'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-central1@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:13:09,636 [WARNING] 🚫 [DRY RUN] 发现违规，拟删除 TPU: kmh-tpuvm-v6e-64-spot-108
+2025-12-15 21:13:10,263 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-dc7c7d] found 8 workers, user: {'eva'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:13:10,263 [ERROR] TPU [kmh-tpuvm-v6e-32-kangyang-dc7c7d] 🚨 违规！用户: {'eva'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-central1@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:13:10,263 [INFO] [032m宽限 zhh 的 TPU: kmh-tpuvm-v6e-32-kangyang-dc7c7d[0m
+2025-12-15 21:13:10,513 [INFO] TPU [kmh-tpuvm-v4-64-spot-yiyang] is idle.
+2025-12-15 21:13:10,742 [INFO] TPU [kmh-tpuvm-v4-64-kangyang-66e1c1] is idle.
+2025-12-15 21:13:10,895 [INFO] TPU [kmh-tpuvm-v5p-64-nopre-2] found 8 workers, user: {'sqa'}, environ SA: {'bucket-us-central1@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'bucket-us-central1@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:13:10,895 [INFO] TPU [kmh-tpuvm-v5p-64-nopre-2] ✅ 合规：运行中，所有 Service Account 正确
+2025-12-15 21:13:11,047 [INFO] TPU [kmh-tpuvm-v4-64-spot-t3] is idle.
+2025-12-15 21:13:11,198 [INFO] TPU [kmh-tpuvm-v4-64-kangyang-00863b] is idle.
+2025-12-15 21:13:12,006 [INFO] TPU [kmh-tpuvm-v5p-256-spot-gzy-2] is idle.
+2025-12-15 21:13:14,507 [INFO] TPU [kmh-tpuvm-v6e-64-spot-51] is idle.
+2025-12-15 21:13:15,119 [INFO] TPU [kmh-tpuvm-v4-64-kangyang-c2463b] is idle.
+2025-12-15 21:13:15,226 [INFO] TPU [kmh-tpuvm-v5p-64-spot-100] found 8 workers, user: {'pdtee'}, environ SA: set(), gcloud SA: {'bucket-us-east5@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:13:15,226 [INFO] TPU [kmh-tpuvm-v5p-64-spot-100] ✅ 合规：运行中，所有 Service Account 正确
+2025-12-15 21:13:15,281 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-daf137] found 8 workers, user: {'eva'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:13:15,281 [ERROR] TPU [kmh-tpuvm-v6e-32-kangyang-daf137] 🚨 违规！用户: {'eva'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-east5@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:13:15,281 [INFO] [032m宽限 zhh 的 TPU: kmh-tpuvm-v6e-32-kangyang-daf137[0m
+2025-12-15 21:13:15,639 [INFO] TPU [kmh-tpuvm-v4-64-spot-t1] is idle.
+2025-12-15 21:13:15,781 [INFO] TPU [kmh-tpuvm-v4-64-kangyang-d6911a] is idle.
+2025-12-15 21:13:16,188 [INFO] TPU [kmh-tpuvm-v4-64-spot-di1] is idle.
+2025-12-15 21:13:17,060 [INFO] TPU [kmh-tpuvm-v3-8-2] is idle.
+2025-12-15 21:13:18,024 [INFO] TPU [kmh-tpuvm-v3-8-1] is idle.
+2025-12-15 21:13:19,797 [INFO] TPU [kmh-tpuvm-v5p-64-spot-201] found 8 workers, user: {'pdtee'}, environ SA: set(), gcloud SA: {'bucket-us-east5@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:13:19,797 [INFO] TPU [kmh-tpuvm-v5p-64-spot-201] ✅ 合规：运行中，所有 Service Account 正确
+2025-12-15 21:13:21,008 [INFO] TPU [kmh-tpuvm-v3-8-10] is idle.
+2025-12-15 21:13:21,711 [INFO] TPU [kmh-tpuvm-v6e-64-spot-52] found 16 workers, user: {'sqa'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:13:21,711 [ERROR] TPU [kmh-tpuvm-v6e-64-spot-52] 🚨 违规！用户: {'sqa'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-east5@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:13:21,711 [INFO] [032m宽限 xibo 的 TPU: kmh-tpuvm-v6e-64-spot-52[0m
+2025-12-15 21:13:22,978 [INFO] TPU [kmh-tpuvm-v6e-32-spot-202] is idle.
+2025-12-15 21:13:23,171 [INFO] TPU [kmh-tpuvm-v5p-64-spot-12] found 8 workers, user: {'pdtee'}, environ SA: set(), gcloud SA: {'bucket-us-east5@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:13:23,172 [INFO] TPU [kmh-tpuvm-v5p-64-spot-12] ✅ 合规：运行中，所有 Service Account 正确
+2025-12-15 21:13:23,511 [INFO] TPU [kmh-tpuvm-v6e-32-spot-201] is idle.
+2025-12-15 21:13:23,585 [INFO] TPU [kmh-tpuvm-v6e-32-spot-205] is idle.
+2025-12-15 21:13:24,104 [INFO] TPU [kmh-tpuvm-v6e-32-gaoxing] is idle.
+2025-12-15 21:13:24,143 [INFO] TPU [kmh-tpuvm-v3-8-3] is idle.
+2025-12-15 21:13:25,819 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-4d2acb] is idle.
+2025-12-15 21:13:27,509 [INFO] TPU [kmh-tpuvm-v6e-64-spot-kristine1] is idle.
+2025-12-15 21:13:31,344 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-a7b650] is idle.
+2025-12-15 21:13:33,136 [INFO] TPU [kmh-tpuvm-v6e-32-spot-203] found 8 workers, user: {'sqa'}, environ SA: {'bucket-asia@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'bucket-asia@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:13:33,136 [INFO] TPU [kmh-tpuvm-v6e-32-spot-203] ✅ 合规：运行中，所有 Service Account 正确
+2025-12-15 21:13:33,756 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-2da2c4] found 8 workers, user: {'eva'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:13:33,756 [ERROR] TPU [kmh-tpuvm-v6e-32-kangyang-2da2c4] 🚨 违规！用户: {'eva'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-asia@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:13:33,756 [INFO] [032m宽限 zhh 的 TPU: kmh-tpuvm-v6e-32-kangyang-2da2c4[0m
+2025-12-15 21:13:35,007 [INFO] TPU [kmh-tpuvm-v6e-64-spot-kristine2] is idle.
+2025-12-15 21:13:52,523 [INFO] TPU [kmh-tpuvm-v6e-32-spot-206] found 8 workers, user: {'sqa'}, environ SA: {'bucket-asia@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'bucket-asia@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:13:52,523 [INFO] TPU [kmh-tpuvm-v6e-32-spot-206] ✅ 合规：运行中，所有 Service Account 正确
+2025-12-15 21:13:52,534 [INFO] ========== 本轮审计总结 ==========
+2025-12-15 21:13:52,534 [INFO] TPU [kmh-tpuvm-v5p-64-1] 合规：运行中，且 Service Account 正确
+2025-12-15 21:13:52,537 [INFO] TPU [kmh-tpuvm-v5p-64-nopre-2] 合规：运行中，且 Service Account 正确
+2025-12-15 21:13:52,539 [INFO] TPU [kmh-tpuvm-v6e-128-spot-gzy-11] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:13:52,541 [INFO] TPU [kmh-tpuvm-v6e-64-spot-103] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:13:52,543 [INFO] TPU [kmh-tpuvm-v6e-64-spot-108] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:13:52,545 [INFO] TPU [kmh-tpuvm-v6e-64-spot-109] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:13:52,547 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-dc7c7d] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:13:52,549 [INFO] TPU [kmh-tpuvm-v5p-64-spot-201] 合规：运行中，且 Service Account 正确
+2025-12-15 21:13:52,551 [INFO] TPU [kmh-tpuvm-v5p-64-spot-100] 合规：运行中，且 Service Account 正确
+2025-12-15 21:13:52,552 [INFO] TPU [kmh-tpuvm-v5p-64-spot-12] 合规：运行中，且 Service Account 正确
+2025-12-15 21:13:52,554 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-daf137] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:13:52,556 [INFO] TPU [kmh-tpuvm-v6e-64-spot-52] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:13:52,559 [INFO] TPU [kmh-tpuvm-v6e-32-spot-203] 合规：运行中，且 Service Account 正确
+2025-12-15 21:13:52,561 [INFO] TPU [kmh-tpuvm-v6e-32-spot-206] 合规：运行中，且 Service Account 正确
+2025-12-15 21:13:52,563 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-2da2c4] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:13:52,565 [INFO] 审计完成，耗时 73.87 秒。等待 226.13 秒进行下一轮...
+2025-12-15 21:17:38,789 [INFO] === 开始全量 TPU 合规性审计 ===
+2025-12-15 21:17:40,864 [INFO] 在 us-central1-a 发现 4 个活跃 TPU (跳过 0 个异常状态)
+2025-12-15 21:17:43,100 [INFO] 在 us-central1-b 发现 8 个活跃 TPU (跳过 1 个异常状态)
+2025-12-15 21:17:45,130 [INFO] ignore us-central2-b/kmh-tpuvm-v4-8-4 (测试忽略名单)
+2025-12-15 21:17:45,130 [INFO] 在 us-central2-b 发现 16 个活跃 TPU (跳过 2 个异常状态)
+2025-12-15 21:17:49,389 [INFO] 在 us-east5-a 发现 4 个活跃 TPU (跳过 1 个异常状态)
+2025-12-15 21:17:51,401 [INFO] 在 us-east5-b 发现 3 个活跃 TPU (跳过 0 个异常状态)
+2025-12-15 21:17:53,624 [INFO] 在 europe-west4-a 发现 4 个活跃 TPU (跳过 0 个异常状态)
+2025-12-15 21:17:56,519 [INFO] 在 asia-northeast1-b 发现 11 个活跃 TPU (跳过 1 个异常状态)
+2025-12-15 21:18:00,981 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-9efa83] is idle.
+2025-12-15 21:18:01,078 [INFO] TPU [kmh-tpuvm-v4-8-1] is idle.
+2025-12-15 21:18:01,103 [INFO] TPU [kmh-tpuvm-v4-8-2] is idle.
+2025-12-15 21:18:01,143 [INFO] TPU [kmh-tpuvm-v5p-128-1] is idle.
+2025-12-15 21:18:01,198 [INFO] TPU [kmh-tpuvm-v4-32-spot-zander-1] is idle.
+2025-12-15 21:18:01,277 [INFO] TPU [kmh-tpuvm-v4-32-spot-yiyang20] is idle.
+2025-12-15 21:18:02,419 [INFO] TPU [kmh-tpuvm-v6e-64-spot-109] found 16 workers, user: {'sqa'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:18:02,419 [ERROR] TPU [kmh-tpuvm-v6e-64-spot-109] 🚨 违规！用户: {'sqa'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-central1@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:18:02,419 [INFO] [032m宽限 xibo 的 TPU: kmh-tpuvm-v6e-64-spot-109[0m
+2025-12-15 21:18:02,500 [INFO] TPU [kmh-tpuvm-v6e-64-spot-103] found 16 workers, user: {'sqa'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'bucket-us-central1@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:18:02,501 [ERROR] TPU [kmh-tpuvm-v6e-64-spot-103] 🚨 违规！用户: {'sqa'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-central1@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:18:02,504 [INFO] [032m宽限 xibo 的 TPU: kmh-tpuvm-v6e-64-spot-103[0m
+2025-12-15 21:18:02,828 [INFO] TPU [kmh-tpuvm-v6e-128-spot-gzy-11] found 32 workers, user: {'zgeng2'}, environ SA: set(), gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:18:02,828 [ERROR] TPU [kmh-tpuvm-v6e-128-spot-gzy-11] 🚨 违规！用户: {'zgeng2'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-central1@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:18:02,835 [INFO] [032m宽限 zhengyang 的 TPU: kmh-tpuvm-v6e-128-spot-gzy-11[0m
+2025-12-15 21:18:03,795 [INFO] TPU [kmh-tpuvm-v5p-64-1] found 8 workers, user: {'sqa'}, environ SA: {'bucket-us-central1@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'bucket-us-central1@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:18:03,795 [INFO] TPU [kmh-tpuvm-v5p-64-1] ✅ 合规：运行中，所有 Service Account 正确
+2025-12-15 21:18:05,522 [INFO] TPU [kmh-tpuvm-v6e-64-spot-107] is idle.
+2025-12-15 21:18:05,629 [INFO] TPU [kmh-tpuvm-v5p-32-nopreeeee-1] is idle.
+2025-12-15 21:18:05,842 [INFO] TPU [kmh-tpuvm-v4-64-spot-yiyang2] is idle.
+2025-12-15 21:18:05,891 [INFO] TPU [kmh-tpuvm-v4-8-6] is idle.
+2025-12-15 21:18:06,015 [INFO] TPU [kmh-tpuvm-v4-8-8] is idle.
+2025-12-15 21:18:06,371 [INFO] TPU [kmh-tpuvm-v4-8-3] is idle.
+2025-12-15 21:18:07,802 [INFO] TPU [kmh-tpuvm-v6e-128-spot-gzy-12] is idle.
+2025-12-15 21:18:08,435 [INFO] TPU [kmh-tpuvm-v6e-64-spot-108] found 16 workers, user: {'sqa'}, environ SA: {'bucket-us-central1@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:18:08,435 [ERROR] TPU [kmh-tpuvm-v6e-64-spot-108] 🚨 违规！用户: {'sqa'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-central1@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:18:08,443 [WARNING] 🚫 [DRY RUN] 发现违规，拟删除 TPU: kmh-tpuvm-v6e-64-spot-108
+2025-12-15 21:18:08,683 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-dc7c7d] found 8 workers, user: {'eva'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:18:08,684 [ERROR] TPU [kmh-tpuvm-v6e-32-kangyang-dc7c7d] 🚨 违规！用户: {'eva'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-central1@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:18:08,684 [INFO] [032m宽限 zhh 的 TPU: kmh-tpuvm-v6e-32-kangyang-dc7c7d[0m
+2025-12-15 21:18:09,996 [INFO] TPU [kmh-tpuvm-v5p-64-nopre-2] found 8 workers, user: {'sqa'}, environ SA: {'bucket-us-central1@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'bucket-us-central1@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:18:09,997 [INFO] TPU [kmh-tpuvm-v5p-64-nopre-2] ✅ 合规：运行中，所有 Service Account 正确
+2025-12-15 21:18:10,271 [INFO] TPU [kmh-tpuvm-v4-64-spot-yiyang] is idle.
+2025-12-15 21:18:10,478 [INFO] TPU [kmh-tpuvm-v4-64-kangyang-66e1c1] is idle.
+2025-12-15 21:18:10,669 [INFO] TPU [kmh-tpuvm-v4-64-spot-t3] is idle.
+2025-12-15 21:18:10,722 [INFO] TPU [kmh-tpuvm-v4-64-kangyang-00863b] is idle.
+2025-12-15 21:18:11,015 [INFO] TPU [kmh-tpuvm-v5p-256-spot-gzy-2] is idle.
+2025-12-15 21:18:13,180 [INFO] TPU [kmh-tpuvm-v6e-64-spot-51] is idle.
+2025-12-15 21:18:13,580 [INFO] TPU [kmh-tpuvm-v5p-64-spot-100] found 8 workers, user: {'pdtee'}, environ SA: set(), gcloud SA: {'bucket-us-east5@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:18:13,580 [INFO] TPU [kmh-tpuvm-v5p-64-spot-100] ✅ 合规：运行中，所有 Service Account 正确
+2025-12-15 21:18:14,620 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-daf137] found 8 workers, user: {'eva'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:18:14,621 [ERROR] TPU [kmh-tpuvm-v6e-32-kangyang-daf137] 🚨 违规！用户: {'eva'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-east5@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:18:14,621 [INFO] [032m宽限 zhh 的 TPU: kmh-tpuvm-v6e-32-kangyang-daf137[0m
+2025-12-15 21:18:14,879 [INFO] TPU [kmh-tpuvm-v4-64-kangyang-c2463b] is idle.
+2025-12-15 21:18:15,234 [INFO] TPU [kmh-tpuvm-v4-64-kangyang-d6911a] is idle.
+2025-12-15 21:18:15,506 [INFO] TPU [kmh-tpuvm-v4-64-spot-t1] is idle.
+2025-12-15 21:18:15,554 [INFO] TPU [kmh-tpuvm-v4-64-spot-di1] is idle.
+2025-12-15 21:18:15,877 [INFO] TPU [kmh-tpuvm-v3-8-2] is idle.
+2025-12-15 21:18:17,207 [INFO] TPU [kmh-tpuvm-v3-8-1] is idle.
+2025-12-15 21:18:18,312 [INFO] TPU [kmh-tpuvm-v5p-64-spot-201] found 8 workers, user: {'pdtee'}, environ SA: set(), gcloud SA: {'bucket-us-east5@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:18:18,313 [INFO] TPU [kmh-tpuvm-v5p-64-spot-201] ✅ 合规：运行中，所有 Service Account 正确
+2025-12-15 21:18:20,518 [INFO] TPU [kmh-tpuvm-v3-8-10] is idle.
+2025-12-15 21:18:20,822 [INFO] TPU [kmh-tpuvm-v6e-64-spot-52] found 16 workers, user: {'sqa'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:18:20,822 [ERROR] TPU [kmh-tpuvm-v6e-64-spot-52] 🚨 违规！用户: {'sqa'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-east5@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:18:20,822 [INFO] [032m宽限 xibo 的 TPU: kmh-tpuvm-v6e-64-spot-52[0m
+2025-12-15 21:18:21,081 [INFO] TPU [kmh-tpuvm-v5p-64-spot-12] found 8 workers, user: {'pdtee'}, environ SA: set(), gcloud SA: {'bucket-us-east5@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:18:21,081 [INFO] TPU [kmh-tpuvm-v5p-64-spot-12] ✅ 合规：运行中，所有 Service Account 正确
+2025-12-15 21:18:22,584 [INFO] TPU [kmh-tpuvm-v6e-32-spot-202] is idle.
+2025-12-15 21:18:22,838 [INFO] TPU [kmh-tpuvm-v6e-32-gaoxing] is idle.
+2025-12-15 21:18:22,840 [INFO] TPU [kmh-tpuvm-v6e-32-spot-201] is idle.
+2025-12-15 21:18:22,852 [INFO] TPU [kmh-tpuvm-v3-8-3] is idle.
+2025-12-15 21:18:23,115 [INFO] TPU [kmh-tpuvm-v6e-32-spot-205] is idle.
+2025-12-15 21:18:24,158 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-4d2acb] is idle.
+2025-12-15 21:18:25,957 [INFO] TPU [kmh-tpuvm-v6e-64-spot-kristine1] is idle.
+2025-12-15 21:18:32,469 [INFO] TPU [kmh-tpuvm-v6e-32-spot-203] found 8 workers, user: {'sqa'}, environ SA: {'bucket-asia@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'bucket-asia@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:18:32,469 [INFO] TPU [kmh-tpuvm-v6e-32-spot-203] ✅ 合规：运行中，所有 Service Account 正确
+2025-12-15 21:18:32,721 [INFO] TPU [kmh-tpuvm-v6e-64-spot-kristine2] is idle.
+2025-12-15 21:18:32,773 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-a7b650] found 8 workers, user: {'eva'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:18:32,773 [ERROR] TPU [kmh-tpuvm-v6e-32-kangyang-a7b650] 🚨 违规！用户: {'eva'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-asia@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:18:32,777 [INFO] [032m宽限 zhh 的 TPU: kmh-tpuvm-v6e-32-kangyang-a7b650[0m
+2025-12-15 21:18:33,929 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-2da2c4] found 8 workers, user: {'eva'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:18:33,929 [ERROR] TPU [kmh-tpuvm-v6e-32-kangyang-2da2c4] 🚨 违规！用户: {'eva'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-asia@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:18:33,936 [INFO] [032m宽限 zhh 的 TPU: kmh-tpuvm-v6e-32-kangyang-2da2c4[0m
+2025-12-15 21:18:49,934 [INFO] TPU [kmh-tpuvm-v6e-32-spot-206] found 8 workers, user: {'sqa'}, environ SA: {'bucket-asia@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'bucket-asia@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:18:49,934 [INFO] TPU [kmh-tpuvm-v6e-32-spot-206] ✅ 合规：运行中，所有 Service Account 正确
+2025-12-15 21:18:49,951 [INFO] ========== 本轮审计总结 ==========
+2025-12-15 21:18:49,952 [INFO] TPU [kmh-tpuvm-v5p-64-1] 合规：运行中，且 Service Account 正确
+2025-12-15 21:18:49,954 [INFO] TPU [kmh-tpuvm-v5p-64-nopre-2] 合规：运行中，且 Service Account 正确
+2025-12-15 21:18:49,957 [INFO] TPU [kmh-tpuvm-v6e-128-spot-gzy-11] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:18:49,958 [INFO] TPU [kmh-tpuvm-v6e-64-spot-103] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:18:49,960 [INFO] TPU [kmh-tpuvm-v6e-64-spot-108] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:18:49,962 [INFO] TPU [kmh-tpuvm-v6e-64-spot-109] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:18:49,964 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-dc7c7d] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:18:49,965 [INFO] TPU [kmh-tpuvm-v5p-64-spot-201] 合规：运行中，且 Service Account 正确
+2025-12-15 21:18:49,967 [INFO] TPU [kmh-tpuvm-v5p-64-spot-100] 合规：运行中，且 Service Account 正确
+2025-12-15 21:18:49,969 [INFO] TPU [kmh-tpuvm-v5p-64-spot-12] 合规：运行中，且 Service Account 正确
+2025-12-15 21:18:49,969 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-daf137] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:18:49,971 [INFO] TPU [kmh-tpuvm-v6e-64-spot-52] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:18:49,972 [INFO] TPU [kmh-tpuvm-v6e-32-spot-203] 合规：运行中，且 Service Account 正确
+2025-12-15 21:18:49,974 [INFO] TPU [kmh-tpuvm-v6e-32-spot-206] 合规：运行中，且 Service Account 正确
+2025-12-15 21:18:49,976 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-2da2c4] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:18:49,977 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-a7b650] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:18:49,980 [INFO] 审计完成，耗时 71.19 秒。等待 228.81 秒进行下一轮...
+2025-12-15 21:22:38,889 [INFO] === 开始全量 TPU 合规性审计 ===
+2025-12-15 21:22:41,008 [INFO] 在 us-central1-a 发现 4 个活跃 TPU (跳过 0 个异常状态)
+2025-12-15 21:22:43,084 [INFO] 在 us-central1-b 发现 8 个活跃 TPU (跳过 1 个异常状态)
+2025-12-15 21:22:45,169 [INFO] ignore us-central2-b/kmh-tpuvm-v4-8-4 (测试忽略名单)
+2025-12-15 21:22:45,169 [INFO] 在 us-central2-b 发现 16 个活跃 TPU (跳过 2 个异常状态)
+2025-12-15 21:22:49,436 [INFO] 在 us-east5-a 发现 4 个活跃 TPU (跳过 1 个异常状态)
+2025-12-15 21:22:51,634 [INFO] 在 us-east5-b 发现 3 个活跃 TPU (跳过 0 个异常状态)
+2025-12-15 21:22:54,334 [INFO] 在 europe-west4-a 发现 4 个活跃 TPU (跳过 0 个异常状态)
+2025-12-15 21:22:57,234 [INFO] 在 asia-northeast1-b 发现 11 个活跃 TPU (跳过 0 个异常状态)
+2025-12-15 21:23:01,751 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-9efa83] is idle.
+2025-12-15 21:23:01,993 [INFO] TPU [kmh-tpuvm-v4-8-2] is idle.
+2025-12-15 21:23:02,040 [INFO] TPU [kmh-tpuvm-v4-32-spot-zander-1] is idle.
+2025-12-15 21:23:02,437 [INFO] TPU [kmh-tpuvm-v4-32-spot-yiyang20] is idle.
+2025-12-15 21:23:02,449 [INFO] TPU [kmh-tpuvm-v5p-128-1] is idle.
+2025-12-15 21:23:02,449 [INFO] TPU [kmh-tpuvm-v4-8-1] is idle.
+2025-12-15 21:23:03,318 [INFO] TPU [kmh-tpuvm-v6e-64-spot-103] found 16 workers, user: {'sqa'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'bucket-us-central1@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:23:03,318 [ERROR] TPU [kmh-tpuvm-v6e-64-spot-103] 🚨 违规！用户: {'sqa'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-central1@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:23:03,318 [INFO] [032m宽限 xibo 的 TPU: kmh-tpuvm-v6e-64-spot-103[0m
+2025-12-15 21:23:03,398 [INFO] TPU [kmh-tpuvm-v6e-64-spot-109] found 16 workers, user: {'sqa'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:23:03,398 [ERROR] TPU [kmh-tpuvm-v6e-64-spot-109] 🚨 违规！用户: {'sqa'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-central1@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:23:03,400 [INFO] [032m宽限 xibo 的 TPU: kmh-tpuvm-v6e-64-spot-109[0m
+2025-12-15 21:23:03,427 [INFO] TPU [kmh-tpuvm-v6e-128-spot-gzy-11] found 32 workers, user: {'zgeng2'}, environ SA: set(), gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:23:03,427 [ERROR] TPU [kmh-tpuvm-v6e-128-spot-gzy-11] 🚨 违规！用户: {'zgeng2'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-central1@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:23:03,429 [INFO] [032m宽限 zhengyang 的 TPU: kmh-tpuvm-v6e-128-spot-gzy-11[0m
+2025-12-15 21:23:04,522 [INFO] TPU [kmh-tpuvm-v5p-64-1] found 8 workers, user: {'sqa'}, environ SA: {'bucket-us-central1@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'bucket-us-central1@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:23:04,522 [INFO] TPU [kmh-tpuvm-v5p-64-1] ✅ 合规：运行中，所有 Service Account 正确
+2025-12-15 21:23:06,216 [INFO] TPU [kmh-tpuvm-v6e-64-spot-107] is idle.
+2025-12-15 21:23:06,722 [INFO] TPU [kmh-tpuvm-v5p-32-nopreeeee-1] is idle.
+2025-12-15 21:23:07,000 [INFO] TPU [kmh-tpuvm-v4-8-6] is idle.
+2025-12-15 21:23:07,033 [INFO] TPU [kmh-tpuvm-v4-64-spot-yiyang2] is idle.
+2025-12-15 21:23:07,164 [INFO] TPU [kmh-tpuvm-v4-8-8] is idle.
+2025-12-15 21:23:07,720 [INFO] TPU [kmh-tpuvm-v4-8-3] is idle.
+2025-12-15 21:23:08,280 [INFO] TPU [kmh-tpuvm-v6e-128-spot-gzy-12] is idle.
+2025-12-15 21:23:09,552 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-dc7c7d] found 8 workers, user: {'eva'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:23:09,552 [ERROR] TPU [kmh-tpuvm-v6e-32-kangyang-dc7c7d] 🚨 违规！用户: {'eva'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-central1@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:23:09,555 [INFO] [032m宽限 zhh 的 TPU: kmh-tpuvm-v6e-32-kangyang-dc7c7d[0m
+2025-12-15 21:23:09,666 [INFO] TPU [kmh-tpuvm-v6e-64-spot-108] found 16 workers, user: {'sqa'}, environ SA: {'bucket-us-central1@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:23:09,666 [ERROR] TPU [kmh-tpuvm-v6e-64-spot-108] 🚨 违规！用户: {'sqa'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-central1@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:23:09,666 [WARNING] 🚫 [DRY RUN] 发现违规，拟删除 TPU: kmh-tpuvm-v6e-64-spot-108
+2025-12-15 21:23:10,959 [INFO] TPU [kmh-tpuvm-v5p-64-nopre-2] found 8 workers, user: {'sqa'}, environ SA: {'bucket-us-central1@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'bucket-us-central1@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:23:10,959 [INFO] TPU [kmh-tpuvm-v5p-64-nopre-2] ✅ 合规：运行中，所有 Service Account 正确
+2025-12-15 21:23:11,111 [INFO] TPU [kmh-tpuvm-v4-64-spot-yiyang] is idle.
+2025-12-15 21:23:11,706 [INFO] TPU [kmh-tpuvm-v4-64-kangyang-66e1c1] is idle.
+2025-12-15 21:23:11,899 [INFO] TPU [kmh-tpuvm-v4-64-kangyang-00863b] is idle.
+2025-12-15 21:23:11,978 [INFO] TPU [kmh-tpuvm-v4-64-spot-t3] is idle.
+2025-12-15 21:23:12,465 [INFO] TPU [kmh-tpuvm-v5p-256-spot-gzy-2] is idle.
+2025-12-15 21:23:14,466 [INFO] TPU [kmh-tpuvm-v6e-64-spot-51] is idle.
+2025-12-15 21:23:14,995 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-daf137] found 8 workers, user: {'eva'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:23:14,996 [ERROR] TPU [kmh-tpuvm-v6e-32-kangyang-daf137] 🚨 违规！用户: {'eva'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-east5@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:23:14,996 [INFO] [032m宽限 zhh 的 TPU: kmh-tpuvm-v6e-32-kangyang-daf137[0m
+2025-12-15 21:23:15,155 [INFO] TPU [kmh-tpuvm-v5p-64-spot-100] found 8 workers, user: {'pdtee'}, environ SA: set(), gcloud SA: {'bucket-us-east5@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:23:15,155 [INFO] TPU [kmh-tpuvm-v5p-64-spot-100] ✅ 合规：运行中，所有 Service Account 正确
+2025-12-15 21:23:15,741 [INFO] TPU [kmh-tpuvm-v4-64-kangyang-c2463b] is idle.
+2025-12-15 21:23:16,439 [INFO] TPU [kmh-tpuvm-v4-64-kangyang-d6911a] is idle.
+2025-12-15 21:23:16,691 [INFO] TPU [kmh-tpuvm-v4-64-spot-t1] is idle.
+2025-12-15 21:23:16,692 [INFO] TPU [kmh-tpuvm-v4-64-spot-di1] is idle.
+2025-12-15 21:23:16,780 [INFO] TPU [kmh-tpuvm-v3-8-2] is idle.
+2025-12-15 21:23:17,677 [INFO] TPU [kmh-tpuvm-v3-8-1] is idle.
+2025-12-15 21:23:19,869 [INFO] TPU [kmh-tpuvm-v5p-64-spot-201] found 8 workers, user: {'pdtee'}, environ SA: set(), gcloud SA: {'bucket-us-east5@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:23:19,870 [INFO] TPU [kmh-tpuvm-v5p-64-spot-201] ✅ 合规：运行中，所有 Service Account 正确
+2025-12-15 21:23:21,269 [INFO] TPU [kmh-tpuvm-v6e-64-spot-52] found 16 workers, user: {'sqa'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:23:21,270 [ERROR] TPU [kmh-tpuvm-v6e-64-spot-52] 🚨 违规！用户: {'sqa'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-us-east5@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:23:21,270 [INFO] [032m宽限 xibo 的 TPU: kmh-tpuvm-v6e-64-spot-52[0m
+2025-12-15 21:23:21,642 [INFO] TPU [kmh-tpuvm-v3-8-10] is idle.
+2025-12-15 21:23:22,098 [INFO] TPU [kmh-tpuvm-v6e-32-spot-202] is idle.
+2025-12-15 21:23:22,262 [INFO] TPU [kmh-tpuvm-v5p-64-spot-12] found 8 workers, user: {'pdtee'}, environ SA: set(), gcloud SA: {'bucket-us-east5@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:23:22,263 [INFO] TPU [kmh-tpuvm-v5p-64-spot-12] ✅ 合规：运行中，所有 Service Account 正确
+2025-12-15 21:23:23,748 [INFO] TPU [kmh-tpuvm-v6e-32-spot-205] is idle.
+2025-12-15 21:23:23,852 [INFO] TPU [kmh-tpuvm-v6e-32-spot-201] is idle.
+2025-12-15 21:23:23,860 [INFO] TPU [kmh-tpuvm-v3-8-3] is idle.
+2025-12-15 21:23:24,452 [INFO] TPU [kmh-tpuvm-v6e-32-gaoxing] is idle.
+2025-12-15 21:23:26,680 [INFO] TPU [kmh-tpuvm-v6e-64-spot-kristine1] is idle.
+2025-12-15 21:23:29,533 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-4d2acb] found 8 workers, user: {'eva'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:23:29,533 [ERROR] TPU [kmh-tpuvm-v6e-32-kangyang-4d2acb] 🚨 违规！用户: {'eva'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-asia@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:23:29,535 [INFO] [032m宽限 zhh 的 TPU: kmh-tpuvm-v6e-32-kangyang-4d2acb[0m
+2025-12-15 21:23:31,966 [INFO] TPU [kmh-tpuvm-v6e-32-spot-203] found 8 workers, user: {'sqa'}, environ SA: {'bucket-asia@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'bucket-asia@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:23:31,967 [INFO] TPU [kmh-tpuvm-v6e-32-spot-203] ✅ 合规：运行中，所有 Service Account 正确
+2025-12-15 21:23:33,650 [INFO] TPU [kmh-tpuvm-v6e-64-spot-kristine2] is idle.
+2025-12-15 21:23:34,275 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-2da2c4] found 8 workers, user: {'eva'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:23:34,275 [ERROR] TPU [kmh-tpuvm-v6e-32-kangyang-2da2c4] 🚨 违规！用户: {'eva'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-asia@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:23:34,278 [INFO] [032m宽限 zhh 的 TPU: kmh-tpuvm-v6e-32-kangyang-2da2c4[0m
+2025-12-15 21:23:34,837 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-a7b650] found 8 workers, user: {'eva'}, environ SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:23:34,838 [ERROR] TPU [kmh-tpuvm-v6e-32-kangyang-a7b650] 🚨 违规！用户: {'eva'}, 使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com'], 允许的账号: 373438850578-compute@developer.gserviceaccount.com 或 bucket-asia@he-vision-group.iam.gserviceaccount.com
+2025-12-15 21:23:34,840 [INFO] [032m宽限 zhh 的 TPU: kmh-tpuvm-v6e-32-kangyang-a7b650[0m
+2025-12-15 21:23:51,350 [INFO] TPU [kmh-tpuvm-v6e-32-spot-206] found 8 workers, user: {'sqa'}, environ SA: {'bucket-asia@he-vision-group.iam.gserviceaccount.com'}, gcloud SA: {'bucket-asia@he-vision-group.iam.gserviceaccount.com'}
+2025-12-15 21:23:51,350 [INFO] TPU [kmh-tpuvm-v6e-32-spot-206] ✅ 合规：运行中，所有 Service Account 正确
+2025-12-15 21:23:51,357 [INFO] ========== 本轮审计总结 ==========
+2025-12-15 21:23:51,357 [INFO] TPU [kmh-tpuvm-v5p-64-1] 合规：运行中，且 Service Account 正确
+2025-12-15 21:23:51,359 [INFO] TPU [kmh-tpuvm-v5p-64-nopre-2] 合规：运行中，且 Service Account 正确
+2025-12-15 21:23:51,361 [INFO] TPU [kmh-tpuvm-v6e-128-spot-gzy-11] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:23:51,363 [INFO] TPU [kmh-tpuvm-v6e-64-spot-103] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:23:51,365 [INFO] TPU [kmh-tpuvm-v6e-64-spot-108] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:23:51,366 [INFO] TPU [kmh-tpuvm-v6e-64-spot-109] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:23:51,368 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-dc7c7d] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:23:51,370 [INFO] TPU [kmh-tpuvm-v5p-64-spot-201] 合规：运行中，且 Service Account 正确
+2025-12-15 21:23:51,372 [INFO] TPU [kmh-tpuvm-v5p-64-spot-100] 合规：运行中，且 Service Account 正确
+2025-12-15 21:23:51,373 [INFO] TPU [kmh-tpuvm-v5p-64-spot-12] 合规：运行中，且 Service Account 正确
+2025-12-15 21:23:51,375 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-daf137] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:23:51,377 [INFO] TPU [kmh-tpuvm-v6e-64-spot-52] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:23:51,378 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-4d2acb] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:23:51,380 [INFO] TPU [kmh-tpuvm-v6e-32-spot-203] 合规：运行中，且 Service Account 正确
+2025-12-15 21:23:51,382 [INFO] TPU [kmh-tpuvm-v6e-32-spot-206] 合规：运行中，且 Service Account 正确
+2025-12-15 21:23:51,384 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-2da2c4] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:23:51,386 [INFO] TPU [kmh-tpuvm-v6e-32-kangyang-a7b650] 判定违规（使用未授权账号: ['tpu-gcs-writer@he-vision-group.iam.gserviceaccount.com']）并触发删除操作
+2025-12-15 21:23:51,388 [INFO] 审计完成，耗时 72.50 秒。等待 227.50 秒进行下一轮...

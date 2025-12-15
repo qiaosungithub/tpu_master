@@ -1,16 +1,15 @@
 import time
 import subprocess
-import json
 import logging
 from multiprocessing import Pool
 
 # ================= 配置区域 =================
 
 CHECK_INTERVAL = 300 
-MAX_WORKERS = 10      # gcloud ssh 较慢，并发数不宜过高，避免 API 限流
-DRY_RUN = True        # 测试阶段请务必保持 True
+MAX_WORKERS = 10
+DRY_RUN = False
 
-# 默认的 Service Account（所有 region 都允许使用）
+# default Service Account
 DEFAULT_SA = "373438850578-compute@developer.gserviceaccount.com"
 
 ZONES = [
@@ -47,6 +46,18 @@ def get_region_from_zone(zone):
 def delete_tpu(name, zone):
     if 'kangyang' in name:
         logging.info(f"\033[032m宽限 zhh 的 TPU: {name}\033[0m")
+        return
+    
+    if 'gzy' in name:
+        logging.info(f"\033[032m宽限 zhengyang 的 TPU: {name}\033[0m")
+        return
+    
+    if name in ['kmh-tpuvm-v6e-64-spot-103', 'kmh-tpuvm-v6e-64-spot-109', 'kmh-tpuvm-v6e-64-spot-52']:
+        logging.info(f"\033[032m宽限 xibo 的 TPU: {name}\033[0m")
+        return
+    
+    if name in ['kmh-tpuvm-v6e-64-spot-108']:
+        logging.info(f"\033[032m宽限 sqa 的 TPU: {name}\033[0m")
         return
     
     if 'kmh-tpuvm-v3-8' in name or 'kmh-tpuvm-v4-8-' in name:
@@ -231,7 +242,6 @@ def run_audit():
                         skipped_count += 1
                         continue
                     
-                    # 只检查 READY 或其他正常运行状态的 TPU
                     all_tpus.append({
                         'name': tpu_name,
                         'zone': zone
@@ -242,7 +252,6 @@ def run_audit():
                 logging.info(f"在 {zone} 发现 {active_count} 个活跃 TPU (跳过 {skipped_count} 个异常状态)")
                 
         except subprocess.CalledProcessError:
-            # Zone 可能不存在或没有权限，跳过
             raise ValueError(f"无法访问 Zone: {zone}")
         except Exception as e:
             raise ValueError(f"获取 Zone {zone} 的 TPU 列表时出错: {str(e)}")
