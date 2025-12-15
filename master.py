@@ -21,7 +21,7 @@ ZONES = [
     "us-east5-a",
     "us-east5-b",
     "europe-west4-a",
-    "asia-southeast1-b",
+    "asia-northeast1-b",
 ]
 
 REGION_SA_MAP = {
@@ -45,6 +45,14 @@ def get_region_from_zone(zone):
     return "-".join(zone.split("/")[-1].split("-")[:-1])
 
 def delete_tpu(name, zone):
+    if 'kangyang' in name:
+        logging.info(f"\033[032m宽限 zhh 的 TPU: {name}\033[0m")
+        return
+    
+    if 'kmh-tpuvm-v3-8' in name or 'kmh-tpuvm-v4-8-' in name:
+        logging.warning(f"\033[032m[Warning] found problematic dev machine: {name}\033[0m")
+        return
+
     if DRY_RUN:
         logging.warning(f"🚫 [DRY RUN] 发现违规，拟删除 TPU: {name}")
         return
@@ -66,25 +74,20 @@ def check_single_tpu(tpu):
 
     # 逻辑：查找占用 TPU 的用户，并获取其 active 账号（支持环境变量和 gcloud auth 两种方式）
     remote_command = (
-        # 1. 尝试通过所有可能的设备文件找到 PID
-        "PID=$(sudo lsof -t /dev/accel* /dev/tpu* 2>/dev/null | head -n 1); "
-        # 2. 如果 PID 仍然为空，尝试使用 tpu-info 工具获取 (v5/v6 常用)
-        "if [ -z \"$PID\" ]; then "
-        "  PID=$(tpu-info -p 2>/dev/null | head -n 1); "
-        "fi; "
-        # 3. if not PID found, return "CHECK_RES:IDLE"
+        "PID=$(sudo lsof -t /dev/accel* /dev/vfio/* 2>/dev/null | head -n 1); "
+        # if not PID found, return "CHECK_RES:IDLE"
         "if [ -z \"$PID\" ]; then echo \"CHECK_RES:IDLE\"; exit 0; fi; "
-        # 4. 获取对应的 Linux 用户
+        # 获取对应的 Linux 用户
         "TPU_USER=$(ps -o user= -p \"$PID\"); "
         
-        # 5. 首先检查环境变量 GOOGLE_APPLICATION_CREDENTIALS
+        # check environ GOOGLE_APPLICATION_CREDENTIALS
         "KEY_PATH=$(sudo strings /proc/$PID/environ | grep '^GOOGLE_APPLICATION_CREDENTIALS=' | cut -d= -f2-); "
         "ENV_SA=''; "
         "if [ -n \"$KEY_PATH\" ] && [ -f \"$KEY_PATH\" ]; then "
         "  ENV_SA=$(grep -oP '\"client_email\":\\s*\"\\K[^\"]+' \"$KEY_PATH\" 2>/dev/null || echo ''); "
         "fi; "
         
-        # 6. 然后检查 gcloud auth
+        # check gcloud auth
         "ALL_ACTIVE=$(sudo -u \"$TPU_USER\" gcloud auth list --filter='status:ACTIVE' --format='value(account)'); "
         "ACCOUNT_COUNT=$(echo \"$ALL_ACTIVE\" | grep -v '^$' | wc -l); "
         "GCLOUD_SA=''; "
@@ -92,7 +95,6 @@ def check_single_tpu(tpu):
         "  GCLOUD_SA=$(echo \"$ALL_ACTIVE\" | head -n 1); "
         "fi; "
         
-        # 7. 返回检测结果（包含两种认证方式的结果）
         "echo \"CHECK_RES:BUSY|USER:$TPU_USER|ENV_SA:$ENV_SA|GCLOUD_SA:$GCLOUD_SA|GCLOUD_COUNT:$ACCOUNT_COUNT\""
     )
 
@@ -193,7 +195,7 @@ def check_single_tpu(tpu):
         logging.info(f"TPU [{name}] ✅ 合规：运行中，所有 Service Account 正确")
         return f"TPU [{name}] 合规：运行中，且 Service Account 正确"
     except subprocess.TimeoutExpired:
-        raise ValueError(f"[{name}] 错误：SSH 连接超时")
+        logging.warning(f"\033[032m[Warning] [{name}] SSH 连接超时!\033[0m")
         return f"[{name}] 错误：SSH 连接超时"
     except Exception as e:
         raise ValueError(f"[{name}] 异常：{str(e)}")
@@ -219,14 +221,13 @@ def run_audit():
                     tpu_name = parts[0].strip()
                     tpu_state = parts[1].strip()
                     
-                    # 跳过 PREEMPTED, TERMINATED 等异常状态的 TPU
                     if tpu_state in ['PREEMPTED', 'TERMINATED', 'CREATING', 'DELETING', 'REPAIRING', 'STOPPED']:
-                        logging.info(f"跳过 {zone}/{tpu_name} (状态: {tpu_state})")
+                        # logging.info(f"ignore {zone}/{tpu_name} (状态: {tpu_state})")
                         skipped_count += 1
                         continue
 
                     if tpu_name == 'kmh-tpuvm-v4-8-4':
-                        logging.info(f"跳过 {zone}/{tpu_name} (测试忽略名单)")
+                        logging.info(f"ignore {zone}/{tpu_name} (测试忽略名单)")
                         skipped_count += 1
                         continue
                     
@@ -254,7 +255,9 @@ def run_audit():
     with Pool(MAX_WORKERS) as p:
         summary = p.map(check_single_tpu, all_tpus)
 
+    logging.info("=" * 10 + " 本轮审计总结 " + "=" * 10)
     for item in summary:
+        if 'idle' in item.lower(): continue
         logging.info(item)
 
 if __name__ == "__main__":
