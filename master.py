@@ -21,7 +21,7 @@ ZONES = [
     "asia-northeast1-b",
 ]
 
-# 需要并行审计的“人名 / key”
+# 需要并行审计的"人名 / key"
 PREFIXES = ["llq", "keya", "dmy", "gzy", "kangyang"]
 
 # 未匹配任何 prefix 的最后一类
@@ -97,12 +97,47 @@ def should_skip_tpu(name: str, zone: str, state: str) -> bool:
     return False
 
 
+def delete_preempted_tpu(tpu_info: dict):
+    """
+    Delete a single PREEMPTED TPU.
+    tpu_info: {"name": ..., "zone": ..., "state": ...}
+    
+    Return: (status, name, zone)
+      status in {"DELETE_SUCCESS", "DELETE_TIMEOUT", "DELETE_FAIL"}
+    """
+    name = tpu_info["name"]
+    zone = tpu_info["zone"]
+    
+    cmd = [
+        "gcloud", "compute", "tpus", "tpu-vm", "delete",
+        name,
+        "--zone", zone,
+        "--quiet",
+    ]
+    
+    try:
+        subprocess.run(cmd, check=True, capture_output=True, text=True, timeout=60)
+        logging.info(f"[DELETE] Successfully deleted PREEMPTED TPU: {name} ({zone})")
+        return ("DELETE_SUCCESS", name, zone)
+    except subprocess.TimeoutExpired:
+        logging.info(f"[DELETE] Timeout deleting {name} ({zone})")
+        return ("DELETE_TIMEOUT", name, zone)
+    except Exception as e:
+        logging.info(f"[DELETE] Failed to delete {name} ({zone}): {e}")
+        return ("DELETE_FAIL", name, zone)
+
+
 def list_tpus_in_zone(zone: str):
     """
     List all ACTIVE TPUs (after skip policy) in a zone.
-    Return: list of {name, zone}
+    Also collect PREEMPTED TPUs for deletion.
+    
+    Return: (active_tpus, preempted_tpus)
+      - active_tpus: list of {name, zone}
+      - preempted_tpus: list of {name, zone, state}
     """
-    results = []
+    active_results = []
+    preempted_results = []
     cmd = [
         "gcloud", "compute", "tpus", "tpu-vm", "list",
         "--zone", zone,
@@ -119,16 +154,21 @@ def list_tpus_in_zone(zone: str):
                 continue
             name, state = parts[0].strip(), parts[1].strip()
 
-            # apply skip policy
+            # Collect PREEMPTED TPUs for deletion
+            if state == "PREEMPTED":
+                preempted_results.append({"name": name, "zone": zone, "state": state})
+                continue
+
+            # apply skip policy for active TPUs
             if should_skip_tpu(name, zone, state):
                 continue
 
-            results.append({"name": name, "zone": zone})
+            active_results.append({"name": name, "zone": zone})
 
     except Exception as e:
         logging.info(f"[ALL] {zone}: list failed ({e})")
 
-    return results
+    return (active_results, preempted_results)
 
 
 def assign_prefix(name: str, prefixes):
@@ -220,6 +260,20 @@ def check_single_tpu(tpu: dict):
         return (prefix, name, zone, "ERROR", msg)
 
 
+# ---------------- Task dispatcher ----------------
+
+def process_task(task):
+    """
+    Dispatch task to appropriate handler based on task type.
+    - If task has 'state' key -> delete task
+    - Otherwise -> check task
+    """
+    if 'state' in task:
+        return delete_preempted_tpu(task)
+    else:
+        return check_single_tpu(task)
+
+
 # ---------------- Main runner ----------------
 
 def run_audit_all(prefixes):
@@ -227,27 +281,63 @@ def run_audit_all(prefixes):
 
     # Phase 1: list all TPUs in all zones (parallel by zone)
     with Pool(MAX_WORKERS) as pool:
-        zone_lists = pool.map(list_tpus_in_zone, ZONES)
+        zone_results = pool.map(list_tpus_in_zone, ZONES)
 
+    # Separate active TPUs and PREEMPTED TPUs
     all_tpus = []
-    for sub in zone_lists:
-        all_tpus.extend(sub)
+    all_preempted = []
+    for active_list, preempted_list in zone_results:
+        all_tpus.extend(active_list)
+        all_preempted.extend(preempted_list)
 
-    if not all_tpus:
-        logging.info("No active TPU found.")
+    if not all_tpus and not all_preempted:
+        logging.info("No TPU found.")
         return
 
-    # Assign prefix (including OTHER) after listing
+    # Assign prefix (including OTHER) for active TPUs
     for t in all_tpus:
         t["prefix"] = assign_prefix(t["name"], prefixes)
 
-    # Phase 2: ssh check all TPUs (parallel)
+    # Phase 2: Delete PREEMPTED TPUs + Check active TPUs in SAME pool (parallel)
+    all_tasks = []
+    
+    # Add delete tasks
+    if all_preempted:
+        logging.info(f"Found {len(all_preempted)} PREEMPTED TPU(s), deleting in parallel with checks...")
+        all_tasks.extend(all_preempted)
+    
+    # Add check tasks
+    all_tasks.extend(all_tpus)
+    
+    if not all_tasks:
+        logging.info("No tasks to execute.")
+        return
+    
+    # Execute all tasks in parallel: deletes + checks
     with Pool(MAX_WORKERS) as pool:
-        results = pool.map(check_single_tpu, all_tpus)
-
+        all_results = pool.map(process_task, all_tasks)
+    
+    # Separate delete results and check results
+    delete_results = []
+    check_results = []
+    
+    for i, result in enumerate(all_results):
+        if i < len(all_preempted):
+            # This is a delete result
+            delete_results.append(result)
+        else:
+            # This is a check result
+            check_results.append(result)
+    
+    # Log deletion summary if any
+    if delete_results:
+        success = sum(1 for r in delete_results if r[0] == "DELETE_SUCCESS")
+        failed = len(delete_results) - success
+        logging.info(f"[DELETE] Summary: {success} deleted, {failed} failed")
+    
     # Phase 3: summary by prefix (including OTHER if any)
     by_prefix = defaultdict(list)
-    for r in results:
+    for r in check_results:
         by_prefix[r[0]].append(r)
 
     logging.info("========== SUMMARY ==========")
