@@ -3,7 +3,12 @@
 Wrapper for master.py: caches output for 5 minutes and uses file locking
 to prevent concurrent runs. Second concurrent run waits and then outputs
 the first run's result.
+
+Usage:
+  --cache true   : Return cached result directly (if any), print cache age
+  --cache false  : Wait for lock, run master.py once, update cache
 """
+import argparse
 import os
 import sys
 import time
@@ -22,10 +27,51 @@ def _log(msg: str):
     print(f"[wrap] {msg}", file=sys.stderr)
 
 
-def main():
+def _parse_args():
+    p = argparse.ArgumentParser(description="Wrapper for master.py with cache option")
+    p.add_argument(
+        "--cache",
+        choices=("true", "false"),
+        default="true",
+        help="true: return cached result; false: run master.py once",
+    )
+    return p.parse_args()
+
+
+def _read_cache():
+    """Return (cached_time, output) or None if cache miss/invalid."""
+    if not os.path.exists(CACHE_FILE):
+        return None
+    try:
+        with open(CACHE_FILE, "r", encoding="utf-8") as f:
+            content = f.read()
+        if not content:
+            return None
+        lines = content.split("\n", 1)
+        cached_time = float(lines[0])
+        output = lines[1] if len(lines) > 1 else ""
+        return (cached_time, output)
+    except (ValueError, IndexError, OSError):
+        return None
+
+
+def run_with_cache_true():
+    """Return cached result directly, print cache age."""
+    entry = _read_cache()
+    if entry is None:
+        _log("No cache available.")
+        sys.exit(1)
+    cached_time, output = entry
+    age = time.time() - cached_time
+    _log(f"Using cached output (delayed by {age:.0f}s)")
+    sys.stdout.write(output)
+    sys.stdout.flush()
+
+
+def run_with_cache_false():
+    """Wait for lock, run master.py once, update cache."""
     lock_fd = None
     try:
-        # Ensure lock file exists
         if not os.path.exists(LOCK_FILE):
             open(LOCK_FILE, "a").close()
 
@@ -35,26 +81,7 @@ def main():
         _log("Lock acquired.")
 
         now = time.time()
-
-        # Check cache: if run within CACHE_DURATION, use cached output
-        if os.path.exists(CACHE_FILE):
-            try:
-                with open(CACHE_FILE, "r", encoding="utf-8") as f:
-                    content = f.read()
-                if content:
-                    lines = content.split("\n", 1)
-                    cached_time = float(lines[0])
-                    age = now - cached_time
-                    if age < CACHE_DURATION:
-                        _log(f"Using cached output (from {age:.0f}s ago)")
-                        cached_output = lines[1] if len(lines) > 1 else ""
-                        sys.stdout.write(cached_output)
-                        sys.stdout.flush()
-                        return
-            except (ValueError, IndexError, OSError):
-                pass
-
-        _log("Cache miss or expired, running master.py...")
+        _log("Running master.py...")
         result = subprocess.run(
             [sys.executable, MASTER_SCRIPT],
             capture_output=True,
@@ -66,7 +93,6 @@ def main():
         if result.stderr:
             output += result.stderr
 
-        _log("Saving output to cache...")
         try:
             with open(CACHE_FILE, "w", encoding="utf-8") as f:
                 f.write(f"{now}\n{output}")
@@ -91,6 +117,14 @@ def main():
                 os.close(lock_fd)
             except OSError:
                 pass
+
+
+def main():
+    args = _parse_args()
+    if args.cache == "true":
+        run_with_cache_true()
+    else:
+        run_with_cache_false()
 
 
 if __name__ == "__main__":
