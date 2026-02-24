@@ -63,9 +63,9 @@ def run_with_cache_true():
         sys.exit(1)
     cached_time, output = entry
     age = time.time() - cached_time
-    _log(f"Using cached output (delayed by {age:.0f}s)")
     sys.stdout.write(output)
     sys.stdout.flush()
+    _log(f"Using cached output (delayed by {age:.0f}s)")
 
 
 def run_with_cache_false():
