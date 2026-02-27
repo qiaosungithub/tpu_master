@@ -1,9 +1,11 @@
 import time
 import subprocess
 import logging
+import os
 from multiprocessing import Pool
 from collections import defaultdict
 import re
+from lock_util import _parse_lock_filename, get_lock_time_str, lock_time_seconds_between
 
 # ================= 配置区域 =================
 
@@ -28,6 +30,8 @@ PREFIXES = ["llq", "keya", "dmy", "gzy", "kangyang"]
 OTHER_PREFIX = "__OTHER__"
 
 LOG_PATH = "/kmh-nfs-ssd-us-mount/code/qiao/work/tpu_dls/tpu_enforcer.log"
+LOCK_DIR = "/kmh-nfs-ssd-us-mount/code/qiao/tpu_lock"
+LOCK_EXPIRE_SECONDS = 30 * 60
 
 # ===========================================
 
@@ -182,6 +186,52 @@ def assign_prefix(name: str, prefixes):
     return OTHER_PREFIX
 
 
+def collect_recent_reservations():
+    """
+    Scan all lock files once and return fresh reservations:
+      {vm_name: user}
+    Expired or invalid lock files are deleted.
+    """
+    reservations = {}
+    now = get_lock_time_str()
+
+    try:
+        files = os.listdir(LOCK_DIR)
+    except OSError as e:
+        logging.info(f"[LOCK] list failed ({e})")
+        return reservations
+
+    for file in files:
+        parsed = _parse_lock_filename(file)
+        full_path = os.path.join(LOCK_DIR, file)
+        if parsed is None:
+            continue
+
+        user, vm_name, time_str = parsed
+        try:
+            seconds_ago = lock_time_seconds_between(time_str, now)
+        except (ValueError, TypeError):
+            # Old/invalid timestamp format, treat as expired.
+            try:
+                os.remove(full_path)
+            except OSError:
+                pass
+            continue
+
+        if seconds_ago > LOCK_EXPIRE_SECONDS:
+            try:
+                os.remove(full_path)
+            except OSError:
+                pass
+            continue
+
+        # Keep the first valid reservation encountered for this TPU.
+        if vm_name not in reservations:
+            reservations[vm_name] = user
+
+    return reservations
+
+
 # ---------------- Core check ----------------
 
 def check_single_tpu(tpu: dict):
@@ -328,6 +378,17 @@ def run_audit_all(prefixes):
         else:
             # This is a check result
             check_results.append(result)
+
+    # Phase 2.5: scan lock directory once, then mark reserved idle TPUs.
+    reservations = collect_recent_reservations()
+    if reservations:
+        marked_results = []
+        for prefix, name, zone, status, msg in check_results:
+            if status == "IDLE" and name in reservations:
+                user = reservations[name]
+                msg = f"{msg} reserve (if idle): {user}"
+            marked_results.append((prefix, name, zone, status, msg))
+        check_results = marked_results
     
     # Log deletion summary if any
     if delete_results:
