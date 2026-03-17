@@ -1,3 +1,4 @@
 log.txt
 .tpu_audit_cache
 .tpu_audit.lock
+tpu_enforcer.log

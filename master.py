@@ -36,24 +36,35 @@ LOCK_EXPIRE_SECONDS = 30 * 60
 # ===========================================
 
 
-# ---------- Console coloring: ONLY [IDLE] + TPU name ----------
+# ---------- Console coloring: [IDLE] in green, [RESERVED] in yellow ----------
 class IdleOnlyFormatter(logging.Formatter):
-    GREEN = "\033[32m"
-    RESET = "\033[0m"
+    GREEN  = "\033[32m"
+    YELLOW = "\033[33m"
+    RESET  = "\033[0m"
 
     # Matches: [IDLE] <tpu-name>
-    IDLE_PATTERN = re.compile(r"(\[IDLE\])\s+([^\s]+)")
+    IDLE_PATTERN     = re.compile(r"(\[IDLE\])\s+([^\s]+)")
+    # Matches: [RESERVED] <tpu-name>
+    RESERVED_PATTERN = re.compile(r"(\[RESERVED\])\s+([^\s]+)")
 
     def format(self, record):
         msg = super().format(record)
 
-        def repl(m):
+        def repl_idle(m):
             return (
                 f"{self.GREEN}{m.group(1)}{self.RESET} "
                 f"{self.GREEN}{m.group(2)}{self.RESET}"
             )
 
-        return self.IDLE_PATTERN.sub(repl, msg)
+        def repl_reserved(m):
+            return (
+                f"{self.YELLOW}{m.group(1)}{self.RESET} "
+                f"{self.YELLOW}{m.group(2)}{self.RESET}"
+            )
+
+        msg = self.IDLE_PATTERN.sub(repl_idle, msg)
+        msg = self.RESERVED_PATTERN.sub(repl_reserved, msg)
+        return msg
 
 
 def setup_logging():
@@ -386,7 +397,8 @@ def run_audit_all(prefixes):
         for prefix, name, zone, status, msg in check_results:
             if status == "IDLE" and name in reservations:
                 user = reservations[name]
-                msg = f"{msg} reserve (if idle): {user}"
+                status = "RESERVED"
+                msg = f"[{prefix}] [RESERVED] {name} ({zone}) reserved by {user}"
             marked_results.append((prefix, name, zone, status, msg))
         check_results = marked_results
     
@@ -416,20 +428,22 @@ def run_audit_all(prefixes):
         if not items:
             continue
 
-        total = len(items)
-        idle = sum(1 for x in items if x[3] == "IDLE")
-        busy = sum(1 for x in items if x[3] == "BUSY")
-        bad = sum(1 for x in items if x[3] in {"ERROR", "TIMEOUT", "SSH_FAIL"})
+        total    = len(items)
+        idle     = sum(1 for x in items if x[3] == "IDLE")
+        reserved = sum(1 for x in items if x[3] == "RESERVED")
+        busy     = sum(1 for x in items if x[3] == "BUSY")
+        bad      = sum(1 for x in items if x[3] in {"ERROR", "TIMEOUT", "SSH_FAIL"})
 
         total_all += total
-        idle_all += idle
+        idle_all  += idle
 
         # Divider between groups
         if idx != 0:
             logging.info("-------")
 
         header = "[OTHER]" if pfx == OTHER_PREFIX else f"[{pfx}]"
-        logging.info(f"{header} total {total}, idle {idle}, busy {busy}, bad {bad}")
+        reserved_part = f", reserved {reserved}" if reserved else ""
+        logging.info(f"{header} total {total}, idle {idle}{reserved_part}, busy {busy}, bad {bad}")
 
         # Per-TPU lines
         for _, _, _, _, msg in items:
