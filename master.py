@@ -2,6 +2,9 @@ import time
 import subprocess
 import logging
 import os
+import sys
+import json
+import fcntl
 from multiprocessing import Pool
 from collections import defaultdict
 import re
@@ -33,17 +36,24 @@ LOG_PATH = "/kmh-nfs-ssd-us-mount/code/qiao/work/tpu_dls/tpu_enforcer.log"
 LOCK_DIR = "/kmh-nfs-ssd-us-mount/code/qiao/tpu_lock"
 LOCK_EXPIRE_SECONDS = 30 * 60
 
+TPU_MANAGER_DIR = "/kmh-nfs-ssd-us-mount/code/zhichengjiang/working/xibo_tpu_manager"
+TPU_MANAGER_DATA_PATH = os.path.join(TPU_MANAGER_DIR, "data.json")
+MOUNTED_FILE = os.path.join(TPU_MANAGER_DIR, "mounted.json")
+
+# TPU names containing any of these keywords will be skipped by auto register/mount.
+AUTO_REGISTER_MOUNT_SKIP_KEYWORDS = ("katelyn", "victor", "zander", "xtiange")
+
 # ===========================================
 
 
 # ---------- Console coloring: [IDLE] in green, [RESERVED] in yellow ----------
 class IdleOnlyFormatter(logging.Formatter):
-    GREEN  = "\033[32m"
+    GREEN = "\033[32m"
     YELLOW = "\033[33m"
-    RESET  = "\033[0m"
+    RESET = "\033[0m"
 
     # Matches: [IDLE] <tpu-name>
-    IDLE_PATTERN     = re.compile(r"(\[IDLE\])\s+([^\s]+)")
+    IDLE_PATTERN = re.compile(r"(\[IDLE\])\s+([^\s]+)")
     # Matches: [RESERVED] <tpu-name>
     RESERVED_PATTERN = re.compile(r"(\[RESERVED\])\s+([^\s]+)")
 
@@ -93,10 +103,15 @@ setup_logging()
 
 # ---------------- Utilities ----------------
 
+
 def should_skip_tpu(name: str, zone: str, state: str) -> bool:
     if state in {
-        "PREEMPTED", "TERMINATED", "CREATING",
-        "DELETING", "REPAIRING", "STOPPED"
+        "PREEMPTED",
+        "TERMINATED",
+        "CREATING",
+        "DELETING",
+        "REPAIRING",
+        "STOPPED",
     }:
         return True
 
@@ -116,20 +131,25 @@ def delete_preempted_tpu(tpu_info: dict):
     """
     Delete a single PREEMPTED TPU.
     tpu_info: {"name": ..., "zone": ..., "state": ...}
-    
+
     Return: (status, name, zone)
       status in {"DELETE_SUCCESS", "DELETE_TIMEOUT", "DELETE_FAIL"}
     """
     name = tpu_info["name"]
     zone = tpu_info["zone"]
-    
+
     cmd = [
-        "gcloud", "compute", "tpus", "tpu-vm", "delete",
+        "gcloud",
+        "compute",
+        "tpus",
+        "tpu-vm",
+        "delete",
         name,
-        "--zone", zone,
+        "--zone",
+        zone,
         "--quiet",
     ]
-    
+
     try:
         subprocess.run(cmd, check=True, capture_output=True, text=True, timeout=60)
         logging.info(f"[DELETE] Successfully deleted PREEMPTED TPU: {name} ({zone})")
@@ -146,7 +166,7 @@ def list_tpus_in_zone(zone: str):
     """
     List all ACTIVE TPUs (after skip policy) in a zone.
     Also collect PREEMPTED TPUs for deletion.
-    
+
     Return: (active_tpus, preempted_tpus)
       - active_tpus: list of {name, zone}
       - preempted_tpus: list of {name, zone, state}
@@ -154,8 +174,13 @@ def list_tpus_in_zone(zone: str):
     active_results = []
     preempted_results = []
     cmd = [
-        "gcloud", "compute", "tpus", "tpu-vm", "list",
-        "--zone", zone,
+        "gcloud",
+        "compute",
+        "tpus",
+        "tpu-vm",
+        "list",
+        "--zone",
+        zone,
         "--format=value(name,state)",
     ]
 
@@ -245,6 +270,7 @@ def collect_recent_reservations():
 
 # ---------------- Core check ----------------
 
+
 def check_single_tpu(tpu: dict):
     """
     tpu dict:
@@ -267,12 +293,18 @@ def check_single_tpu(tpu: dict):
     )
 
     ssh_cmd = [
-        "gcloud", "compute", "tpus", "tpu-vm", "ssh",
+        "gcloud",
+        "compute",
+        "tpus",
+        "tpu-vm",
+        "ssh",
         name,
-        "--zone", zone,
+        "--zone",
+        zone,
         "--worker=all",
         "--ssh-flag=-n",
-        "--command", remote_cmd,
+        "--command",
+        remote_cmd,
     ]
 
     try:
@@ -314,7 +346,7 @@ def check_single_tpu(tpu: dict):
         return (prefix, name, zone, "BUSY", msg)
 
     except subprocess.TimeoutExpired:
-        msg = f"[{prefix}] [TIMEOUT] {name}"
+        msg = f"[{prefix}] [TIMEOUT] {name} ({zone})"
         return (prefix, name, zone, "TIMEOUT", msg)
     except Exception as e:
         msg = f"[{prefix}] [ERROR] {name}: {e}"
@@ -323,19 +355,191 @@ def check_single_tpu(tpu: dict):
 
 # ---------------- Task dispatcher ----------------
 
+
 def process_task(task):
     """
     Dispatch task to appropriate handler based on task type.
     - If task has 'state' key -> delete task
     - Otherwise -> check task
     """
-    if 'state' in task:
+    if "state" in task:
         return delete_preempted_tpu(task)
     else:
         return check_single_tpu(task)
 
 
+# ---------------- Auto-register & mount helpers ----------------
+
+
+def _read_mount_state():
+    """Return (mounted_set, mounting_set) from mounted.json."""
+    if not os.path.exists(MOUNTED_FILE):
+        return set(), set()
+    try:
+        with open(MOUNTED_FILE, "r") as f:
+            data = json.load(f)
+        return set(data.get("mounted", [])), set(data.get("mounting", []))
+    except (OSError, json.JSONDecodeError):
+        return set(), set()
+
+
+def _write_mount_state_locked(mounted, mounting):
+    """Write mounted.json with file lock to avoid races between workers."""
+    fd = None
+    try:
+        fd = os.open(MOUNTED_FILE, os.O_RDWR | os.O_CREAT)
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        content = json.dumps(
+            {"mounted": sorted(mounted), "mounting": sorted(mounting)}, indent=2
+        )
+        os.ftruncate(fd, 0)
+        os.lseek(fd, 0, os.SEEK_SET)
+        os.write(fd, content.encode())
+    finally:
+        if fd is not None:
+            fcntl.flock(fd, fcntl.LOCK_UN)
+            os.close(fd)
+
+
+def _read_mount_state_locked():
+    """Read mounted.json under file lock (for use inside workers)."""
+    fd = None
+    try:
+        fd = os.open(MOUNTED_FILE, os.O_RDWR | os.O_CREAT)
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        raw = os.read(fd, 1 << 20).decode()
+        if not raw.strip():
+            data = {}
+        else:
+            data = json.loads(raw)
+        return set(data.get("mounted", [])), set(data.get("mounting", []))
+    except (OSError, json.JSONDecodeError):
+        return set(), set()
+    finally:
+        if fd is not None:
+            fcntl.flock(fd, fcntl.LOCK_UN)
+            os.close(fd)
+
+
+def _get_mount_tag(name, mounted_set, mounting_set):
+    if name in mounted_set:
+        return "[mounted]"
+    if name in mounting_set:
+        return "[mounting]"
+    return "[not mounted]"
+
+
+def _is_tpu_registered(name):
+    """Return True if the TPU full name appears in the tpu_manager data.json."""
+    try:
+        with open(TPU_MANAGER_DATA_PATH, "r") as f:
+            data = json.load(f)
+        for tpu_list in data.get("all_tpus", {}).values():
+            if name in tpu_list:
+                return True
+        return False
+    except (OSError, json.JSONDecodeError):
+        return False
+
+
+def _should_skip_auto_register_mount(name):
+    lowered_name = name.lower()
+    return any(keyword in lowered_name for keyword in AUTO_REGISTER_MOUNT_SKIP_KEYWORDS)
+
+
+def _do_mount_single(args):
+    """
+    Worker function: register (if needed) + mount one TPU.
+    Suppresses stdout. Updates mounted.json atomically when done.
+    """
+    name, zone = args
+
+    if _should_skip_auto_register_mount(name):
+        logging.info(f"[AUTO] Skip auto register/mount for TPU: {name}")
+        return
+
+    if TPU_MANAGER_DIR not in sys.path:
+        sys.path.insert(0, TPU_MANAGER_DIR)
+
+    devnull = open(os.devnull, "w")
+    saved_stdout = sys.stdout
+
+    # Register if needed
+    if not _is_tpu_registered(name):
+        try:
+            sys.stdout = devnull
+            from utils.logger import register_tpu_and_write_spreadsheet
+
+            register_tpu_and_write_spreadsheet(name, zone, spot=True)
+        except Exception:
+            pass
+        finally:
+            sys.stdout = saved_stdout
+
+    # Mount
+    mount_ok = False
+    try:
+        sys.stdout = devnull
+        from utils.operate import mount_disk
+
+        result = mount_disk(name)
+        mount_ok = result == "success"
+    except Exception:
+        pass
+    finally:
+        sys.stdout = saved_stdout
+        devnull.close()
+
+    # Update mounted.json: move from mounting -> mounted (or just remove from mounting)
+    mounted, mounting = _read_mount_state_locked()
+    mounting.discard(name)
+    if mount_ok:
+        mounted.add(name)
+    _write_mount_state_locked(mounted, mounting)
+
+
+def _spawn_mount_workers(tpus_to_mount):
+    """
+    Fork a child process that mounts all given TPUs in parallel.
+    Caller must have already marked them as 'mounting' in mounted.json.
+    Parent returns immediately.
+    """
+    logging.info(
+        f"[AUTO] Spawning background mounts for {len(tpus_to_mount)} TPU(s)..."
+    )
+
+    pid = os.fork()
+    if pid != 0:
+        # Parent: return immediately
+        return
+
+    # Child process: mount all in parallel, then exit
+    try:
+        # Detach from parent's session and close inherited FDs
+        # so wrap_master's subprocess.run() doesn't hang waiting on pipes
+        os.setsid()
+        devnull_fd = os.open(os.devnull, os.O_RDWR)
+        os.dup2(devnull_fd, 0)  # stdin
+        os.dup2(devnull_fd, 1)  # stdout
+        os.dup2(devnull_fd, 2)  # stderr
+        os.close(devnull_fd)
+        # Re-setup logging to file only (console handler is now /dev/null)
+        for h in logging.getLogger().handlers[:]:
+            logging.getLogger().removeHandler(h)
+        fh = logging.FileHandler(LOG_PATH)
+        fh.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+        logging.getLogger().addHandler(fh)
+
+        with Pool(min(MAX_WORKERS, len(tpus_to_mount))) as pool:
+            pool.map(_do_mount_single, tpus_to_mount)
+    except Exception:
+        pass
+    finally:
+        os._exit(0)
+
+
 # ---------------- Main runner ----------------
+
 
 def run_audit_all(prefixes):
     logging.info("=== TPU idle/busy audit start ===")
@@ -361,27 +565,29 @@ def run_audit_all(prefixes):
 
     # Phase 2: Delete PREEMPTED TPUs + Check active TPUs in SAME pool (parallel)
     all_tasks = []
-    
+
     # Add delete tasks
     if all_preempted:
-        logging.info(f"Found {len(all_preempted)} PREEMPTED TPU(s), deleting in parallel with checks...")
+        logging.info(
+            f"Found {len(all_preempted)} PREEMPTED TPU(s), deleting in parallel with checks..."
+        )
         all_tasks.extend(all_preempted)
-    
+
     # Add check tasks
     all_tasks.extend(all_tpus)
-    
+
     if not all_tasks:
         logging.info("No tasks to execute.")
         return
-    
+
     # Execute all tasks in parallel: deletes + checks
     with Pool(MAX_WORKERS) as pool:
         all_results = pool.map(process_task, all_tasks)
-    
+
     # Separate delete results and check results
     delete_results = []
     check_results = []
-    
+
     for i, result in enumerate(all_results):
         if i < len(all_preempted):
             # This is a delete result
@@ -401,17 +607,38 @@ def run_audit_all(prefixes):
                 msg = f"[{prefix}] [RESERVED] {name} ({zone}) reserved by {user}"
             marked_results.append((prefix, name, zone, status, msg))
         check_results = marked_results
-    
+
     # Log deletion summary if any
     if delete_results:
         success = sum(1 for r in delete_results if r[0] == "DELETE_SUCCESS")
         failed = len(delete_results) - success
         logging.info(f"[DELETE] Summary: {success} deleted, {failed} failed")
-    
+
     # Phase 3: summary by prefix (including OTHER if any)
     by_prefix = defaultdict(list)
     for r in check_results:
         by_prefix[r[0]].append(r)
+
+    # Determine which IDLE TPUs need mounting, mark them as "mounting" BEFORE printing
+    pre_mounted, pre_mounting = _read_mount_state()
+    tpus_to_mount = []
+    for prefix, name, zone, status, msg in check_results:
+        if (
+            status == "IDLE"
+            and name not in pre_mounted
+            and name not in pre_mounting
+            and not _should_skip_auto_register_mount(name)
+        ):
+            tpus_to_mount.append((name, zone))
+
+    # Mark as "mounting" in mounted.json so the SUMMARY below picks it up
+    if tpus_to_mount:
+        for name, _zone in tpus_to_mount:
+            pre_mounting.add(name)
+        _write_mount_state_locked(pre_mounted, pre_mounting)
+
+    # Re-read to get the freshest state (including what we just marked)
+    mounted_tpus, mounting_tpus = _read_mount_state()
 
     logging.info("========== SUMMARY ==========")
 
@@ -428,14 +655,14 @@ def run_audit_all(prefixes):
         if not items:
             continue
 
-        total    = len(items)
-        idle     = sum(1 for x in items if x[3] == "IDLE")
+        total = len(items)
+        idle = sum(1 for x in items if x[3] == "IDLE")
         reserved = sum(1 for x in items if x[3] == "RESERVED")
-        busy     = sum(1 for x in items if x[3] == "BUSY")
-        bad      = sum(1 for x in items if x[3] in {"ERROR", "TIMEOUT", "SSH_FAIL"})
+        busy = sum(1 for x in items if x[3] == "BUSY")
+        bad = sum(1 for x in items if x[3] in {"ERROR", "TIMEOUT", "SSH_FAIL"})
 
         total_all += total
-        idle_all  += idle
+        idle_all += idle
 
         # Divider between groups
         if idx != 0:
@@ -443,14 +670,21 @@ def run_audit_all(prefixes):
 
         header = "[OTHER]" if pfx == OTHER_PREFIX else f"[{pfx}]"
         reserved_part = f", reserved {reserved}" if reserved else ""
-        logging.info(f"{header} total {total}, idle {idle}{reserved_part}, busy {busy}, bad {bad}")
+        logging.info(
+            f"{header} total {total}, idle {idle}{reserved_part}, busy {busy}, bad {bad}"
+        )
 
         # Per-TPU lines
-        for _, _, _, _, msg in items:
-            logging.info(msg)
+        for _, name, _, _, msg in items:
+            mount_tag = _get_mount_tag(name, mounted_tpus, mounting_tpus)
+            logging.info(f"{msg}  {mount_tag}")
 
     logging.info("-------")
     logging.info(f"[ALL] total {total_all}, idle {idle_all}")
+
+    # Spawn background mount processes (marks already written above)
+    if tpus_to_mount:
+        _spawn_mount_workers(tpus_to_mount)
 
 
 if __name__ == "__main__":
