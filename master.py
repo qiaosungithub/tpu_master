@@ -3,7 +3,6 @@ import subprocess
 import logging
 import os
 import sys
-import json
 from multiprocessing import Pool
 from collections import defaultdict
 import re
@@ -36,7 +35,9 @@ LOCK_DIR = "/kmh-nfs-ssd-us-mount/code/qiao/tpu_lock"
 LOCK_EXPIRE_SECONDS = 30 * 60
 
 TPU_MANAGER_DIR = "/kmh-nfs-ssd-us-mount/code/zhichengjiang/working/xibo_tpu_manager"
-TPU_MANAGER_DATA_PATH = os.path.join(TPU_MANAGER_DIR, "data.json")
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+CACHE_FILE = os.path.join(SCRIPT_DIR, ".tpu_audit_cache")
 
 # TPU names containing any of these keywords will be skipped by auto register/mount.
 AUTO_REGISTER_MOUNT_SKIP_KEYWORDS = ("katelyn", "victor", "zander", "xtiange")
@@ -100,6 +101,26 @@ setup_logging()
 
 
 # ---------------- Utilities ----------------
+
+_TIMEOUT_RE = re.compile(r"\[TIMEOUT\]\s+(\S+)")
+
+
+def _read_cache_timeout_tpus() -> set:
+    """Read cache file and return set of TPU names that had [TIMEOUT] in the previous run."""
+    try:
+        with open(CACHE_FILE, "r", encoding="utf-8") as f:
+            content = f.read()
+        lines = content.split("\n", 1)
+        output = lines[1] if len(lines) > 1 else ""
+    except (OSError, ValueError):
+        return set()
+
+    timed_out = set()
+    for line in output.splitlines():
+        m = _TIMEOUT_RE.search(line)
+        if m:
+            timed_out.add(m.group(1))
+    return timed_out
 
 
 def should_skip_tpu(name: str, zone: str, state: str) -> bool:
@@ -382,22 +403,11 @@ def _should_skip_auto_register_mount(name):
     return any(keyword in lowered_name for keyword in AUTO_REGISTER_MOUNT_SKIP_KEYWORDS)
 
 
-def _is_tpu_registered(name):
-    """Return True if the TPU full name appears in the tpu_manager data.json."""
-    try:
-        with open(TPU_MANAGER_DATA_PATH, "r") as f:
-            data = json.load(f)
-        for tpu_list in data.get("all_tpus", {}).values():
-            if name in tpu_list:
-                return True
-        return False
-    except (OSError, json.JSONDecodeError):
-        return False
-
 
 def _do_mount_single(args):
     """
-    Worker function: register (if needed) + mount one TPU.
+    Worker function: mount one TPU directly (no registration needed).
+    Zone is passed in explicitly so data.json lookup is bypassed entirely.
     Whether the mount succeeded is reflected on the TPU itself (/home/sqa/.disk_mounted).
     """
     name, zone = args
@@ -406,33 +416,15 @@ def _do_mount_single(args):
         logging.info(f"[AUTO] Skip auto register/mount for TPU: {name}")
         return
 
-    if TPU_MANAGER_DIR not in sys.path:
-        sys.path.insert(0, TPU_MANAGER_DIR)
-
-    devnull = open(os.devnull, "w")
-    saved_stdout = sys.stdout
-
-    if not _is_tpu_registered(name):
-        try:
-            sys.stdout = devnull
-            from utils.logger import register_tpu_and_write_spreadsheet
-
-            register_tpu_and_write_spreadsheet(name, zone, spot=True)
-        except Exception:
-            pass
-        finally:
-            sys.stdout = saved_stdout
-
     try:
-        sys.stdout = devnull
-        from utils.operate import mount_disk
-
-        mount_disk(name)
+        subprocess.run(
+            ["python", os.path.join(TPU_MANAGER_DIR, "tpu.py"), "mount-disk", name, f"--zone={zone}"],
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
     except Exception:
         pass
-    finally:
-        sys.stdout = saved_stdout
-        devnull.close()
 
 
 def _spawn_mount_workers(tpus_to_mount):
@@ -527,6 +519,35 @@ def run_audit_all(prefixes):
             # This is a check result
             check_results.append(result)
 
+    # Phase 2.3: Delete TPUs that are TIMEOUT in BOTH current run and cache (previous run).
+    cache_timeout_tpus = _read_cache_timeout_tpus()
+    persistent_timeout_tasks = [
+        {"name": name, "zone": zone, "state": "TIMEOUT"}
+        for _, name, zone, status, _, _ in check_results
+        if status == "TIMEOUT" and name in cache_timeout_tpus
+    ]
+    if persistent_timeout_tasks:
+        logging.info(
+            f"[TIMEOUT_DELETE] {len(persistent_timeout_tasks)} TPU(s) were TIMEOUT last run too, deleting: "
+            + ", ".join(t["name"] for t in persistent_timeout_tasks)
+        )
+        with Pool(min(MAX_WORKERS, len(persistent_timeout_tasks))) as pool:
+            timeout_del_results = pool.map(delete_preempted_tpu, persistent_timeout_tasks)
+        deleted_names = set()
+        for del_status, del_name, del_zone in timeout_del_results:
+            logging.info(f"[TIMEOUT_DELETE] {del_name} ({del_zone}): {del_status}")
+            if del_status == "DELETE_SUCCESS":
+                deleted_names.add(del_name)
+        # Update status for successfully deleted TPUs
+        if deleted_names:
+            check_results = [
+                (prefix, name, zone,
+                 "TIMEOUT_DELETED", f"[{prefix}] [TIMEOUT_DELETED] {name} ({zone})", disk_mounted)
+                if name in deleted_names
+                else (prefix, name, zone, status, msg, disk_mounted)
+                for prefix, name, zone, status, msg, disk_mounted in check_results
+            ]
+
     # Phase 2.5: scan lock directory once, then mark reserved idle TPUs.
     reservations = collect_recent_reservations()
     if reservations:
@@ -577,7 +598,7 @@ def run_audit_all(prefixes):
         idle = sum(1 for x in items if x[3] == "IDLE")
         reserved = sum(1 for x in items if x[3] == "RESERVED")
         busy = sum(1 for x in items if x[3] == "BUSY")
-        bad = sum(1 for x in items if x[3] in {"ERROR", "TIMEOUT", "SSH_FAIL"})
+        bad = sum(1 for x in items if x[3] in {"ERROR", "TIMEOUT", "SSH_FAIL", "TIMEOUT_DELETED"})
 
         total_all += total
         idle_all += idle
