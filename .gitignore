@@ -2,3 +2,8 @@ log.txt
 .tpu_audit_cache
 .tpu_audit.lock
 tpu_enforcer.log
+.tpu_audit_records.json
+.tpu_timeout_counts.json
+mount_logs/
+__pycache__/
+*.bak*

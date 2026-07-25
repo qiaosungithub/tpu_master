@@ -3,6 +3,7 @@ import subprocess
 import logging
 import os
 import sys
+import json
 from multiprocessing import Pool
 from collections import defaultdict
 import re
@@ -30,6 +31,16 @@ PREFIXES = ["llq", "keya", "dmy", "gzy", "kangyang"]
 # 未匹配任何 prefix 的最后一类
 OTHER_PREFIX = "__OTHER__"
 
+# Sort modes for `tou` output grouping
+SORT_BY_PREFIX = "prefix"
+SORT_BY_TYPE = "type"
+VALID_SORTS = (SORT_BY_PREFIX, SORT_BY_TYPE)
+
+# TPU type extraction (e.g. kmh-tpuvm-v5p-64-spot-... -> "v5p-64")
+OTHER_TYPE = "__OTHER_TYPE__"
+TPU_TYPE_REGEX = re.compile(r"kmh-tpuvm-(v\d+[a-z]?-\d+)")
+TYPE_PARSE_REGEX = re.compile(r"v(\d+)([a-z]?)-(\d+)")
+
 LOG_PATH = "/kmh-nfs-ssd-us-mount/code/qiao/work/tpu_dls/tpu_enforcer.log"
 LOCK_DIR = "/kmh-nfs-ssd-us-mount/code/qiao/tpu_lock"
 LOCK_EXPIRE_SECONDS = 30 * 60
@@ -37,7 +48,10 @@ LOCK_EXPIRE_SECONDS = 30 * 60
 TPU_MANAGER_DIR = "/kmh-nfs-ssd-us-mount/code/zhichengjiang/working/xibo_tpu_manager"
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-CACHE_FILE = os.path.join(SCRIPT_DIR, ".tpu_audit_cache")
+TIMEOUT_COUNT_FILE = os.path.join(SCRIPT_DIR, ".tpu_timeout_counts.json")
+# Delete a TPU only after this many consecutive audit runs where it reports TIMEOUT.
+TIMEOUT_DELETE_THRESHOLD = 10
+MOUNT_LOG_DIR = os.path.join(SCRIPT_DIR, "mount_logs")
 
 # TPU names containing any of these keywords will be skipped by auto register/mount.
 AUTO_REGISTER_MOUNT_SKIP_KEYWORDS = ("katelyn", "victor", "zander", "xtiange")
@@ -97,30 +111,30 @@ def setup_logging():
     logger.addHandler(ch)
 
 
-setup_logging()
+# setup_logging() is called from __main__ only — wrap_master imports this module
+# just to use format_summary, and we don't want to open the file log on every cache hit.
 
 
 # ---------------- Utilities ----------------
 
-_TIMEOUT_RE = re.compile(r"\[TIMEOUT\]\s+(\S+)")
-
-
-def _read_cache_timeout_tpus() -> set:
-    """Read cache file and return set of TPU names that had [TIMEOUT] in the previous run."""
+def _load_timeout_counts() -> dict:
+    """Per-TPU consecutive [TIMEOUT] streak (persisted across runs)."""
     try:
-        with open(CACHE_FILE, "r", encoding="utf-8") as f:
-            content = f.read()
-        lines = content.split("\n", 1)
-        output = lines[1] if len(lines) > 1 else ""
-    except (OSError, ValueError):
-        return set()
+        with open(TIMEOUT_COUNT_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if not isinstance(data, dict):
+            return {}
+        return {str(k): int(v) for k, v in data.items()}
+    except (OSError, ValueError, TypeError, json.JSONDecodeError):
+        return {}
 
-    timed_out = set()
-    for line in output.splitlines():
-        m = _TIMEOUT_RE.search(line)
-        if m:
-            timed_out.add(m.group(1))
-    return timed_out
+
+def _save_timeout_counts(counts: dict) -> None:
+    try:
+        with open(TIMEOUT_COUNT_FILE, "w", encoding="utf-8") as f:
+            json.dump(counts, f, indent=0, sort_keys=True)
+    except OSError:
+        pass
 
 
 def should_skip_tpu(name: str, zone: str, state: str) -> bool:
@@ -241,6 +255,22 @@ def assign_prefix(name: str, prefixes):
     return OTHER_PREFIX
 
 
+def extract_tpu_type(name: str) -> str:
+    """Extract chip-type-and-size from a TPU name (e.g. v5p-64, v6e-8)."""
+    m = TPU_TYPE_REGEX.search(name)
+    return m.group(1) if m else OTHER_TYPE
+
+
+def tpu_type_sort_key(t: str):
+    """Sort key for TPU types: by (generation, chip-suffix, size)."""
+    if t == OTHER_TYPE:
+        return (10**6, "z", 10**6, t)
+    m = TYPE_PARSE_REGEX.match(t)
+    if not m:
+        return (10**6 - 1, "z", 10**6 - 1, t)
+    return (int(m.group(1)), m.group(2), int(m.group(3)), t)
+
+
 def collect_recent_reservations():
     """
     Scan all lock files once and return fresh reservations:
@@ -290,18 +320,24 @@ def collect_recent_reservations():
 # ---------------- Core check ----------------
 
 
-def check_single_tpu(tpu: dict):
-    """
-    tpu dict:
-      {"name":..., "zone":..., "prefix":...}
+def _new_record(tpu):
+    return {
+        "name": tpu["name"],
+        "zone": tpu["zone"],
+        "prefix": tpu["prefix"],
+        "status": None,
+        "disk_mounted": None,
+        "users": None,        # populated for BUSY
+        "reserved_by": None,  # populated for RESERVED (set later in run_audit_all)
+        "error_msg": None,    # populated for ERROR / SSH_FAIL
+    }
 
-    Return:
-      (prefix, name, zone, status, message)
-    status in {"IDLE","BUSY","SSH_FAIL","TIMEOUT","ERROR"}
-    """
+
+def check_single_tpu(tpu: dict):
+    """tpu dict: {"name":..., "zone":..., "prefix":...}. Returns a record dict."""
     name = tpu["name"]
     zone = tpu["zone"]
-    prefix = tpu["prefix"]
+    record = _new_record(tpu)
 
     remote_cmd = (
         "PID=$(sudo lsof -t /dev/accel* /dev/vfio/* 2>/dev/null | head -n 1); "
@@ -311,32 +347,22 @@ def check_single_tpu(tpu: dict):
     )
 
     ssh_cmd = [
-        "gcloud",
-        "compute",
-        "tpus",
-        "tpu-vm",
-        "ssh",
-        name,
-        "--zone",
-        zone,
-        "--worker=all",
-        "--ssh-flag=-n",
-        "--command",
-        remote_cmd,
+        "gcloud", "compute", "tpus", "tpu-vm", "ssh", name,
+        "--zone", zone, "--worker=all", "--ssh-flag=-n", "--command", remote_cmd,
     ]
 
     try:
         res = subprocess.run(ssh_cmd, capture_output=True, text=True, timeout=40)
 
         if res.returncode != 0:
-            msg = f"[{prefix}] [SSH_FAIL] {name}: {res.stderr.strip()}"
-            return (prefix, name, zone, "SSH_FAIL", msg, None)
+            record["status"] = "SSH_FAIL"
+            record["error_msg"] = res.stderr.strip()
+            return record
 
         users = set()
         saw_check = False
         saw_busy = False
-        # Any worker reporting NOT_MOUNTED means disk needs mounting.
-        disk_mounted = None
+        disk_mounted = None  # any worker reporting NOT_MOUNTED → False
         for line in res.stdout.splitlines():
             if "MOUNT_RES:" in line:
                 payload = line.split("MOUNT_RES:")[1].strip()
@@ -345,39 +371,142 @@ def check_single_tpu(tpu: dict):
                 elif payload == "MOUNTED" and disk_mounted is None:
                     disk_mounted = True
                 continue
-
             if "CHECK_RES:" not in line:
                 continue
-
             saw_check = True
             payload = line.split("CHECK_RES:")[1].strip()
-
             if payload == "IDLE":
                 continue
-
             if payload.startswith("BUSY"):
                 saw_busy = True
                 for part in payload.split("|"):
                     if part.startswith("USER:"):
                         users.add(part.split(":", 1)[1])
 
+        record["disk_mounted"] = disk_mounted
+
         if not saw_check:
-            msg = f"[{prefix}] [ERROR] {name}: no CHECK_RES in output"
-            return (prefix, name, zone, "ERROR", msg, None)
+            record["status"] = "ERROR"
+            record["error_msg"] = "no CHECK_RES in output"
+            return record
 
         if not saw_busy:
-            msg = f"[{prefix}] [IDLE] {name} ({zone})"
-            return (prefix, name, zone, "IDLE", msg, disk_mounted)
+            record["status"] = "IDLE"
+            return record
 
-        msg = f"[{prefix}] [BUSY] {name} ({zone}) users={sorted(users)}"
-        return (prefix, name, zone, "BUSY", msg, disk_mounted)
+        record["status"] = "BUSY"
+        record["users"] = sorted(users)
+        return record
 
     except subprocess.TimeoutExpired:
-        msg = f"[{prefix}] [TIMEOUT] {name} ({zone})"
-        return (prefix, name, zone, "TIMEOUT", msg, None)
+        record["status"] = "TIMEOUT"
+        return record
     except Exception as e:
-        msg = f"[{prefix}] [ERROR] {name}: {e}"
-        return (prefix, name, zone, "ERROR", msg, None)
+        record["status"] = "ERROR"
+        record["error_msg"] = str(e)
+        return record
+
+
+def format_record_msg(record, group_label):
+    """Build a single audit-line string from a record + the group label to display."""
+    name = record["name"]
+    zone = record["zone"]
+    status = record["status"]
+    base = f"[{group_label}] [{status}]"
+    if status == "IDLE":
+        disk_str = (
+            "MOUNTED" if record["disk_mounted"] is True
+            else "NOT_MOUNTED" if record["disk_mounted"] is False
+            else "UNKNOWN"
+        )
+        return f"{base} {name} ({zone}) [{disk_str}]"
+    if status == "BUSY":
+        return f"{base} {name} ({zone}) users={record['users']}"
+    if status == "RESERVED":
+        disk_str = (
+            "MOUNTED" if record["disk_mounted"] is True
+            else "NOT_MOUNTED" if record["disk_mounted"] is False
+            else "UNKNOWN"
+        )
+        return f"{base} {name} ({zone}) reserved by {record['reserved_by']} [{disk_str}]"
+    if status in ("TIMEOUT", "TIMEOUT_DELETED"):
+        return f"{base} {name} ({zone})"
+    if status in ("SSH_FAIL", "ERROR"):
+        return f"{base} {name}: {record['error_msg']}"
+    return f"{base} {name} ({zone})"
+
+
+def _within_group_sort_key(r):
+    """Per-row sort key inside each type group: IDLE first, then RESERVED/BUSY by user, then bad."""
+    status = r["status"]
+    if status == "IDLE":
+        # MOUNTED first (immediately usable), then NOT_MOUNTED, then UNKNOWN
+        mount_rank = 0 if r["disk_mounted"] is True else (1 if r["disk_mounted"] is False else 2)
+        return (0, mount_rank, "", r["name"])
+    if status == "RESERVED":
+        return (1, 0, r.get("reserved_by") or "", r["name"])
+    if status == "BUSY":
+        users = r.get("users") or []
+        first_user = users[0] if users else ""
+        return (2, 0, first_user, r["name"])
+    # TIMEOUT / SSH_FAIL / ERROR / TIMEOUT_DELETED
+    return (3, 0, status, r["name"])
+
+
+def format_summary(records, sort_by, prefixes):
+    """Format a list of records as audit-summary lines (no logging side effect)."""
+    if sort_by not in VALID_SORTS:
+        raise ValueError(f"sort_by must be one of {VALID_SORTS}, got {sort_by!r}")
+
+    if sort_by == SORT_BY_TYPE:
+        by_group = defaultdict(list)
+        for r in records:
+            by_group[extract_tpu_type(r["name"])].append(r)
+        ordered_groups = sorted(by_group.keys(), key=tpu_type_sort_key)
+        is_other = lambda g: g == OTHER_TYPE
+        # Type mode: within each group, sort IDLE → RESERVED → BUSY → bad,
+        # so picking a card just means scanning the top of the relevant section.
+        for g in by_group:
+            by_group[g].sort(key=_within_group_sort_key)
+    else:
+        by_group = defaultdict(list)
+        for r in records:
+            by_group[r["prefix"]].append(r)
+        ordered_groups = list(prefixes)
+        if by_group.get(OTHER_PREFIX):
+            ordered_groups.append(OTHER_PREFIX)
+        is_other = lambda g: g == OTHER_PREFIX
+
+    lines = ["========== SUMMARY =========="]
+    total_all = 0
+    idle_all = 0
+
+    for idx, g in enumerate(ordered_groups):
+        items = by_group.get(g, [])
+        if not items:
+            continue
+
+        total = len(items)
+        idle = sum(1 for x in items if x["status"] == "IDLE")
+        reserved = sum(1 for x in items if x["status"] == "RESERVED")
+        busy = sum(1 for x in items if x["status"] == "BUSY")
+        bad = sum(1 for x in items if x["status"] in {"ERROR", "TIMEOUT", "SSH_FAIL", "TIMEOUT_DELETED"})
+
+        total_all += total
+        idle_all += idle
+
+        if idx != 0:
+            lines.append("-------")
+
+        label = "OTHER" if is_other(g) else g
+        reserved_part = f", reserved {reserved}" if reserved else ""
+        lines.append(f"[{label}] total {total}, idle {idle}{reserved_part}, busy {busy}, bad {bad}")
+        for r in items:
+            lines.append(format_record_msg(r, label))
+
+    lines.append("-------")
+    lines.append(f"[ALL] total {total_all}, idle {idle_all}")
+    return lines
 
 
 # ---------------- Task dispatcher ----------------
@@ -409,22 +538,46 @@ def _do_mount_single(args):
     Worker function: mount one TPU directly (no registration needed).
     Zone is passed in explicitly so data.json lookup is bypassed entirely.
     Whether the mount succeeded is reflected on the TPU itself (/home/sqa/.disk_mounted).
+    stdout+stderr are written to mount_logs/{name}_{zone}.txt for debugging.
     """
     name, zone = args
 
+    os.makedirs(MOUNT_LOG_DIR, exist_ok=True)
+    log_path = os.path.join(MOUNT_LOG_DIR, f"{name}_{zone}.txt")
+    cmd = ["python", os.path.join(TPU_MANAGER_DIR, "tpu.py"), "mount-disk", name, f"--zone={zone}"]
+
+    def _write_log(content):
+        try:
+            with open(log_path, "w", encoding="utf-8") as f:
+                f.write(content)
+        except OSError:
+            pass
+
     if _should_skip_auto_register_mount(name):
-        logging.info(f"[AUTO] Skip auto register/mount for TPU: {name}")
+        _write_log(f"SKIPPED: {name} matches AUTO_REGISTER_MOUNT_SKIP_KEYWORDS\n")
         return
 
     try:
-        subprocess.run(
-            ["python", os.path.join(TPU_MANAGER_DIR, "tpu.py"), "mount-disk", name, f"--zone={zone}"],
-            capture_output=True,
-            text=True,
-            timeout=120,
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=1000)
+        _write_log(
+            f"cmd: {' '.join(cmd)}\n"
+            f"returncode: {result.returncode}\n"
+            f"stdout:\n{result.stdout}\n"
+            f"stderr:\n{result.stderr}\n"
         )
-    except Exception:
-        pass
+        if result.returncode == 0:
+            logging.info(f"[AUTO] mount-disk {name} ({zone}): SUCCESS")
+        else:
+            logging.info(
+                f"[AUTO] mount-disk {name} ({zone}): FAILED (rc={result.returncode}), "
+                f"see {log_path}"
+            )
+    except subprocess.TimeoutExpired:
+        _write_log(f"cmd: {' '.join(cmd)}\nTIMEOUT after 1000s\n")
+        logging.info(f"[AUTO] mount-disk {name} ({zone}): TIMEOUT")
+    except Exception as e:
+        _write_log(f"cmd: {' '.join(cmd)}\nERROR: {e}\n")
+        logging.info(f"[AUTO] mount-disk {name} ({zone}): ERROR: {e}")
 
 
 def _spawn_mount_workers(tpus_to_mount):
@@ -465,6 +618,13 @@ def _spawn_mount_workers(tpus_to_mount):
 
 
 def run_audit_all(prefixes):
+    """Run one audit pass. Returns a list of TPU records (no formatting/printing of the summary).
+
+    The audit-process status messages (timeout streak, delete summary, AUTO mount spawn)
+    still go to the file/console logger as before. Only the per-prefix SUMMARY block
+    is no longer printed here — callers format that themselves via `format_summary`,
+    so cached records can be re-grouped on demand without re-running the audit.
+    """
     logging.info("=== TPU idle/busy audit start ===")
 
     # Phase 1: list all TPUs in all zones (parallel by zone)
@@ -480,7 +640,7 @@ def run_audit_all(prefixes):
 
     if not all_tpus and not all_preempted:
         logging.info("No TPU found.")
-        return
+        return []
 
     # Assign prefix (including OTHER) for active TPUs
     for t in all_tpus:
@@ -488,47 +648,54 @@ def run_audit_all(prefixes):
 
     # Phase 2: Delete PREEMPTED TPUs + Check active TPUs in SAME pool (parallel)
     all_tasks = []
-
-    # Add delete tasks
     if all_preempted:
         logging.info(
             f"Found {len(all_preempted)} PREEMPTED TPU(s), deleting in parallel with checks..."
         )
         all_tasks.extend(all_preempted)
-
-    # Add check tasks
     all_tasks.extend(all_tpus)
 
     if not all_tasks:
         logging.info("No tasks to execute.")
-        return
+        return []
 
-    # Execute all tasks in parallel: deletes + checks
     with Pool(MAX_WORKERS) as pool:
         all_results = pool.map(process_task, all_tasks)
 
-    # Separate delete results and check results
+    # Separate delete results (tuples) from check results (record dicts)
     delete_results = []
     check_results = []
-
     for i, result in enumerate(all_results):
         if i < len(all_preempted):
-            # This is a delete result
             delete_results.append(result)
         else:
-            # This is a check result
             check_results.append(result)
 
-    # Phase 2.3: Delete TPUs that are TIMEOUT in BOTH current run and cache (previous run).
-    cache_timeout_tpus = _read_cache_timeout_tpus()
+    # Phase 2.3: Consecutive TIMEOUT counter; delete only after TIMEOUT_DELETE_THRESHOLD streak.
+    seen_names = {r["name"] for r in check_results}
+    timeout_counts = {k: v for k, v in _load_timeout_counts().items() if k in seen_names}
+
+    for r in check_results:
+        if r["status"] == "TIMEOUT":
+            c = timeout_counts.get(r["name"], 0) + 1
+            timeout_counts[r["name"]] = c
+            logging.info(
+                f"[TIMEOUT_COUNT] {r['name']} ({r['zone']}): consecutive_timeout_count={c} "
+                f"(delete when >= {TIMEOUT_DELETE_THRESHOLD})"
+            )
+        else:
+            timeout_counts.pop(r["name"], None)
+
     persistent_timeout_tasks = [
-        {"name": name, "zone": zone, "state": "TIMEOUT"}
-        for _, name, zone, status, _, _ in check_results
-        if status == "TIMEOUT" and name in cache_timeout_tpus
+        {"name": r["name"], "zone": r["zone"], "state": "TIMEOUT"}
+        for r in check_results
+        if r["status"] == "TIMEOUT"
+        and timeout_counts.get(r["name"], 0) >= TIMEOUT_DELETE_THRESHOLD
     ]
     if persistent_timeout_tasks:
         logging.info(
-            f"[TIMEOUT_DELETE] {len(persistent_timeout_tasks)} TPU(s) were TIMEOUT last run too, deleting: "
+            f"[TIMEOUT_DELETE] {len(persistent_timeout_tasks)} TPU(s) reached "
+            f"{TIMEOUT_DELETE_THRESHOLD} consecutive TIMEOUT(s), deleting: "
             + ", ".join(t["name"] for t in persistent_timeout_tasks)
         )
         with Pool(min(MAX_WORKERS, len(persistent_timeout_tasks))) as pool:
@@ -538,27 +705,22 @@ def run_audit_all(prefixes):
             logging.info(f"[TIMEOUT_DELETE] {del_name} ({del_zone}): {del_status}")
             if del_status == "DELETE_SUCCESS":
                 deleted_names.add(del_name)
-        # Update status for successfully deleted TPUs
-        if deleted_names:
-            check_results = [
-                (prefix, name, zone,
-                 "TIMEOUT_DELETED", f"[{prefix}] [TIMEOUT_DELETED] {name} ({zone})", disk_mounted)
-                if name in deleted_names
-                else (prefix, name, zone, status, msg, disk_mounted)
-                for prefix, name, zone, status, msg, disk_mounted in check_results
-            ]
+                timeout_counts.pop(del_name, None)
+        _save_timeout_counts(timeout_counts)
+        # Update status for successfully deleted TPUs (mutate records in place)
+        for r in check_results:
+            if r["name"] in deleted_names:
+                r["status"] = "TIMEOUT_DELETED"
+    else:
+        _save_timeout_counts(timeout_counts)
 
-    # Phase 2.5: scan lock directory once, then mark reserved idle TPUs.
+    # Phase 2.5: scan lock directory once, then mark reserved idle TPUs (mutate in place).
     reservations = collect_recent_reservations()
     if reservations:
-        marked_results = []
-        for prefix, name, zone, status, msg, disk_mounted in check_results:
-            if status == "IDLE" and name in reservations:
-                user = reservations[name]
-                status = "RESERVED"
-                msg = f"[{prefix}] [RESERVED] {name} ({zone}) reserved by {user}"
-            marked_results.append((prefix, name, zone, status, msg, disk_mounted))
-        check_results = marked_results
+        for r in check_results:
+            if r["status"] == "IDLE" and r["name"] in reservations:
+                r["status"] = "RESERVED"
+                r["reserved_by"] = reservations[r["name"]]
 
     # Log deletion summary if any
     if delete_results:
@@ -566,67 +728,48 @@ def run_audit_all(prefixes):
         failed = len(delete_results) - success
         logging.info(f"[DELETE] Summary: {success} deleted, {failed} failed")
 
-    # Phase 3: summary by prefix (including OTHER if any)
-    by_prefix = defaultdict(list)
-    for r in check_results:
-        by_prefix[r[0]].append(r)
-
-    # Collect IDLE TPUs whose disk is not yet mounted and schedule background mounts.
+    # Collect IDLE/RESERVED TPUs whose disk is not yet mounted and schedule background mounts.
     tpus_to_mount = [
-        (name, zone)
-        for _, name, zone, status, _, disk_mounted in check_results
-        if status == "IDLE" and disk_mounted is False
-        and not _should_skip_auto_register_mount(name)
+        (r["name"], r["zone"])
+        for r in check_results
+        if r["status"] in ("IDLE", "RESERVED") and r["disk_mounted"] is False
+        and not _should_skip_auto_register_mount(r["name"])
     ]
-
-    logging.info("========== SUMMARY ==========")
-
-    # Ensure we print in requested order + OTHER at the end (only if exists)
-    ordered_prefixes = list(prefixes)
-    if by_prefix.get(OTHER_PREFIX):
-        ordered_prefixes.append(OTHER_PREFIX)
-
-    total_all = 0
-    idle_all = 0
-
-    for idx, pfx in enumerate(ordered_prefixes):
-        items = by_prefix.get(pfx, [])
-        if not items:
-            continue
-
-        total = len(items)
-        idle = sum(1 for x in items if x[3] == "IDLE")
-        reserved = sum(1 for x in items if x[3] == "RESERVED")
-        busy = sum(1 for x in items if x[3] == "BUSY")
-        bad = sum(1 for x in items if x[3] in {"ERROR", "TIMEOUT", "SSH_FAIL", "TIMEOUT_DELETED"})
-
-        total_all += total
-        idle_all += idle
-
-        # Divider between groups
-        if idx != 0:
-            logging.info("-------")
-
-        header = "[OTHER]" if pfx == OTHER_PREFIX else f"[{pfx}]"
-        reserved_part = f", reserved {reserved}" if reserved else ""
-        logging.info(
-            f"{header} total {total}, idle {idle}{reserved_part}, busy {busy}, bad {bad}"
-        )
-
-        # Per-TPU lines
-        for _, name, _, _, msg, _ in items:
-            logging.info(msg)
-
-    logging.info("-------")
-    logging.info(f"[ALL] total {total_all}, idle {idle_all}")
-
     if tpus_to_mount:
         _spawn_mount_workers(tpus_to_mount)
 
+    return check_results
+
 
 if __name__ == "__main__":
+    setup_logging()
+    import argparse
+    parser = argparse.ArgumentParser(description="TPU idle/busy audit (one round).")
+    parser.add_argument(
+        "--sort",
+        choices=VALID_SORTS,
+        default=SORT_BY_PREFIX,
+        help="Group output by name prefix (default, e.g. [gzy] [llq]) or by TPU type (e.g. [v5p-64] [v6e-8]).",
+    )
+    parser.add_argument(
+        "--records-out",
+        default=None,
+        metavar="PATH",
+        help="If set, also dump the raw audit records as JSON to this path (consumed by wrap_master cache).",
+    )
+    args = parser.parse_args()
     t0 = time.time()
-    run_audit_all(PREFIXES)
+    records = run_audit_all(PREFIXES)
+
+    if args.records_out and records:
+        try:
+            with open(args.records_out, "w", encoding="utf-8") as f:
+                json.dump({"ts": time.time(), "records": records}, f)
+        except OSError as e:
+            logging.warning(f"Failed to write records JSON to {args.records_out}: {e}")
+
+    for line in format_summary(records, args.sort, PREFIXES):
+        logging.info(line)
     logging.info(f"Audit finished in {time.time() - t0:.2f}s")
 
     # Optional periodic run:
